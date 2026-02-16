@@ -1,16 +1,18 @@
 :root {
-  --bg: #f4f5f7;
-  --card: #ffffff;
-  --text: #0f1115;
-  --sub: #6c7380;
-  --line: #e6e8ee;
+  --bg: #0b0c0f;
+  --bg-soft: #12141a;
+  --card: #151821;
+  --card-2: #1b1f2a;
+  --text: #f4f6fb;
+  --sub: #a1a8b8;
+  --line: #2a2f3b;
   --yellow: #ffd400;
-  --yellow-dark: #f2c200;
-  --black: #111318;
-  --danger: #dc2626;
-  --success: #2aa66b;
-  --nav-accent: #111318;
-  --nav-muted: #9aa1ae;
+  --yellow-dark: #f0c400;
+  --black: #101216;
+  --danger: #ff5d5d;
+  --success: #35d28f;
+  --nav-accent: #ffd400;
+  --nav-muted: #8f97a8;
 }
 
 * {
@@ -20,8 +22,8 @@
 body {
   margin: 0;
   background:
-    radial-gradient(circle at 85% -10%, rgba(255, 212, 0, 0.18), transparent 38%),
-    linear-gradient(180deg, #f8f9fc 0%, #f2f3f7 100%);
+    radial-gradient(circle at 80% -10%, rgba(255, 212, 0, 0.12), transparent 38%),
+    linear-gradient(180deg, var(--bg-soft) 0%, var(--bg) 100%);
   color: var(--text);
   font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
@@ -30,7 +32,7 @@ body {
   max-width: 460px;
   margin: 0 auto;
   min-height: 100vh;
-  padding-bottom: 96px;
+  padding-bottom: 102px;
 }
 
 .content {
@@ -39,45 +41,38 @@ body {
 
 .page h1 {
   margin: 4px 0 14px;
-  font-size: 36px;
-  letter-spacing: -0.7px;
+  font-size: 34px;
+  letter-spacing: -0.6px;
   font-weight: 800;
 }
 
 .card {
-  background: var(--card);
+  background: linear-gradient(180deg, var(--card) 0%, #121620 100%);
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: 18px;
   padding: 16px;
   margin-bottom: 14px;
-  box-shadow: 0 8px 24px rgba(17, 19, 24, 0.06);
 }
 
 .balance-card {
   background:
-    radial-gradient(circle at 100% 0%, rgba(255, 212, 0, 0.18), transparent 40%),
-    linear-gradient(140deg, #171a20 0%, #0f1115 70%);
-  border-color: #2a2d35;
-  color: #f7f8fb;
-  box-shadow: 0 12px 28px rgba(17, 19, 24, 0.35);
-}
-
-.balance-card .label {
-  color: #c2c8d4;
-}
-
-.balance-value {
-  margin: 6px 0 10px;
-  font-size: 42px;
-  line-height: 1;
-  font-weight: 800;
-  color: var(--yellow);
+    radial-gradient(circle at 100% -10%, rgba(255, 212, 0, 0.22), transparent 42%),
+    linear-gradient(140deg, #171a22 0%, #10131a 75%);
+  border-color: #343a48;
 }
 
 .label {
   color: var(--sub);
   font-size: 13px;
   margin-bottom: 6px;
+}
+
+.balance-value {
+  margin: 6px 0 12px;
+  font-size: 42px;
+  line-height: 1;
+  font-weight: 800;
+  color: var(--yellow);
 }
 
 .assets {
@@ -89,20 +84,11 @@ body {
 .asset {
   display: flex;
   justify-content: space-between;
-  color: #f0f3f8;
-  border: 1px solid var(--line);
-  border-radius: 14px;
+  color: #ecf0f8;
+  border: 1px solid #343a48;
+  border-radius: 13px;
   padding: 11px 12px;
-  font-weight: 600;
-}
-
-.balance-card .asset {
-  border-color: #2f343e;
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.balance-card .asset span:last-child {
-  color: #a5adbc;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .primary-btn {
@@ -115,7 +101,6 @@ body {
   font-weight: 700;
   font-size: 16px;
   cursor: pointer;
-  box-shadow: 0 8px 18px rgba(255, 212, 0, 0.33);
 }
 
 .primary-btn:active {
@@ -127,8 +112,8 @@ body {
   border: none;
   border-radius: 14px;
   padding: 13px 14px;
-  background: #272c35;
-  color: #fff;
+  background: #2a2f3b;
+  color: var(--text);
   font-weight: 700;
   cursor: pointer;
   margin-top: 10px;
@@ -136,18 +121,19 @@ body {
 
 .input {
   width: 100%;
-  border: 1px solid #d7dce7;
+  border: 1px solid #333847;
   border-radius: 14px;
   padding: 12px 13px;
   margin: 8px 0 10px;
   outline: none;
   font-size: 16px;
-  background: #fbfbfd;
+  background: #10141d;
+  color: var(--text);
 }
 
 .input:focus {
-  border-color: #1c2029;
-  box-shadow: 0 0 0 3px rgba(255, 212, 0, 0.2);
+  border-color: var(--yellow);
+  box-shadow: 0 0 0 2px rgba(255, 212, 0, 0.2);
 }
 
 .list {
@@ -177,7 +163,7 @@ body {
 .video {
   width: 100%;
   border-radius: 14px;
-  border: 1px solid #d8dde7;
+  border: 1px solid #373d4c;
 }
 
 .scan-card {
@@ -194,7 +180,7 @@ body {
 }
 
 .profile-card a {
-  color: #1d4ed8;
+  color: var(--yellow);
   text-decoration: none;
 }
 
@@ -204,15 +190,15 @@ body {
   left: 50%;
   transform: translateX(-50%);
   width: min(460px, 100%);
-  background: #ffffff;
-  border-top: 1px solid #dfe3ec;
+  background: rgba(15, 18, 24, 0.96);
+  border-top: 1px solid #2e3443;
   border-top-left-radius: 22px;
   border-top-right-radius: 22px;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   padding: 8px 6px calc(10px + env(safe-area-inset-bottom));
   min-height: 90px;
-  box-shadow: 0 -6px 22px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(14px);
 }
 
 .bottom-nav button {
@@ -267,7 +253,7 @@ body {
   height: 56px;
   border-radius: 16px;
   justify-self: center;
-  box-shadow: 0 10px 20px rgba(255, 212, 0, 0.45);
+  box-shadow: 0 10px 20px rgba(255, 212, 0, 0.35);
 }
 
 .scan-btn .nav-icon {

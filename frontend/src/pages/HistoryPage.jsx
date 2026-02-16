@@ -17,8 +17,8 @@ export default function HistoryPage({ items }) {
             <section className="card history-card" key={item.id}>
               <p><b>{item.storeName}</b></p>
               <p>{new Date(item.date).toLocaleString("ru-RU")}</p>
-              <p>₽ {item.amountRub}</p>
-              <p>{item.amountUsdt} USDT</p>
+              <p>{Number(item.amountRub) > 0 ? `₽ ${item.amountRub}` : "Без суммы в ₽"}</p>
+              <p>{item.storeName === "Пополнение баланса" ? `+${item.amountUsdt} USDT` : `${item.amountUsdt} USDT`}</p>
               <p className={item.status === "SUCCESS" ? "ok" : "bad"}>{toStatus(item.status)}</p>
             </section>
           ))}

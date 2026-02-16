@@ -298,6 +298,14 @@ app.post("/api/topup", async (req, res) => {
 
   if (!HAS_DATABASE) {
     memoryState.balance.usdt = +(memoryState.balance.usdt + amountUsdt).toFixed(2);
+    memoryState.history.unshift({
+      id: `tx_${Date.now()}`,
+      date: new Date().toISOString(),
+      storeName: "Пополнение баланса",
+      amountRub: 0,
+      amountUsdt,
+      status: "SUCCESS"
+    });
     return res.json({
       status: "SUCCESS",
       newBalanceUsdt: memoryState.balance.usdt
@@ -317,6 +325,15 @@ app.post("/api/topup", async (req, res) => {
       `,
       [amountUsdt, userId]
     );
+
+    await client.query(
+      `
+        INSERT INTO transactions (user_id, store_name, amount_rub, amount_usdt, status)
+        VALUES ($1, $2, $3, $4, 'SUCCESS')
+      `,
+      [userId, "Пополнение баланса", 0, amountUsdt]
+    );
+
     await client.query("COMMIT");
 
     res.json({

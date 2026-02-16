@@ -13,6 +13,9 @@
   --success: #35d28f;
   --nav-accent: #5ec8ff;
   --nav-muted: #8f97a8;
+  --glow-soft: rgba(94, 200, 255, 0.14);
+  --shadow-card: 0 16px 34px rgba(0, 0, 0, 0.32);
+  --shadow-soft: 0 8px 22px rgba(0, 0, 0, 0.2);
 }
 
 * {
@@ -22,10 +25,13 @@
 body {
   margin: 0;
   background:
-    radial-gradient(circle at 80% -10%, rgba(94, 200, 255, 0.12), transparent 38%),
-    linear-gradient(180deg, var(--bg-soft) 0%, var(--bg) 100%);
+    radial-gradient(circle at 88% -8%, rgba(94, 200, 255, 0.16), transparent 34%),
+    radial-gradient(circle at -10% 20%, rgba(94, 200, 255, 0.08), transparent 36%),
+    linear-gradient(180deg, #141823 0%, #090b10 100%);
   color: var(--text);
   font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 .app {
@@ -36,7 +42,7 @@ body {
 }
 
 .content {
-  padding: 14px;
+  padding: 16px;
 }
 
 .page h1 {
@@ -50,7 +56,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .home-user {
@@ -65,16 +71,18 @@ body {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: #1f2430;
-  border: 1px solid #343a48;
+  background: linear-gradient(145deg, #232838, #171b26);
+  border: 1px solid #3b4253;
   color: var(--yellow);
   font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), var(--shadow-soft);
 }
 
 .home-name {
   margin: 0;
-  font-size: 19px;
+  font-size: 21px;
   font-weight: 700;
+  letter-spacing: -0.2px;
 }
 
 .home-sub {
@@ -84,12 +92,13 @@ body {
 }
 
 .home-badge {
-  background: linear-gradient(135deg, #5ec8ff, #3eb2f2);
+  background: linear-gradient(135deg, #7ad6ff, #4cbcf6);
   color: #09131a;
   border-radius: 999px;
-  padding: 7px 12px;
+  padding: 8px 13px;
   font-size: 11px;
   font-weight: 800;
+  box-shadow: 0 8px 18px rgba(64, 166, 220, 0.35);
 }
 
 .home-status {
@@ -100,22 +109,29 @@ body {
 .home-actions {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 9px;
+  gap: 10px;
   margin-bottom: 10px;
 }
 
 .action-btn {
-  border: 1px solid #2b3140;
-  border-radius: 14px;
-  background: #151a23;
+  border: 1px solid #2f3748;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #1a202c 0%, #141a24 100%);
   color: #dfe4ef;
-  padding: 10px 8px;
+  padding: 12px 8px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  box-shadow: var(--shadow-soft);
+  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.action-btn:active {
+  transform: scale(0.98);
+  border-color: #44607a;
 }
 
 .action-btn span {
@@ -130,8 +146,8 @@ body {
 }
 
 .action-btn.loading {
-  border-color: #4aa9d9;
-  background: linear-gradient(180deg, #1a2330 0%, #131a24 100%);
+  border-color: #59bde8;
+  box-shadow: 0 0 0 1px rgba(94, 200, 255, 0.18), 0 10px 24px rgba(41, 123, 166, 0.28);
 }
 
 .action-btn-primary {
@@ -143,14 +159,15 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .mini-card {
-  background: #151a23;
-  border: 1px solid #2a3040;
+  background: linear-gradient(180deg, #191f2b 0%, #141a24 100%);
+  border: 1px solid #2f3748;
   border-radius: 16px;
-  padding: 12px;
+  padding: 14px;
+  box-shadow: var(--shadow-soft);
 }
 
 .mini-card p {
@@ -160,9 +177,10 @@ body {
 }
 
 .mini-card h3 {
-  margin: 7px 0 2px;
+  margin: 9px 0 4px;
   color: #f6f8ff;
-  font-size: 22px;
+  font-size: 24px;
+  letter-spacing: -0.2px;
 }
 
 .mini-card span {
@@ -171,11 +189,12 @@ body {
 }
 
 .card {
-  background: linear-gradient(180deg, var(--card) 0%, #121620 100%);
-  border: 1px solid var(--line);
-  border-radius: 18px;
+  background: linear-gradient(180deg, #171d29 0%, #121722 100%);
+  border: 1px solid #2d3546;
+  border-radius: 20px;
   padding: 16px;
   margin-bottom: 14px;
+  box-shadow: var(--shadow-card);
 }
 
 .balance-card {
@@ -213,11 +232,12 @@ body {
   min-width: calc(100% - 2px);
   scroll-snap-align: start;
   background:
-    radial-gradient(circle at 100% -10%, rgba(94, 200, 255, 0.22), transparent 42%),
-    linear-gradient(140deg, #171a22 0%, #10131a 75%);
-  border: 1px solid #343a48;
-  border-radius: 18px;
-  padding: 16px;
+    radial-gradient(circle at 92% -8%, rgba(94, 200, 255, 0.22), transparent 38%),
+    linear-gradient(145deg, #171d28 0%, #10151f 78%);
+  border: 1px solid #354056;
+  border-radius: 20px;
+  padding: 18px;
+  box-shadow: 0 16px 32px rgba(6, 10, 18, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .wallet-row {
@@ -236,7 +256,7 @@ body {
 .wallet-card-code {
   margin: 0 0 3px;
   color: #eef2fb;
-  font-size: 22px;
+  font-size: 23px;
   font-weight: 800;
 }
 
@@ -252,9 +272,9 @@ body {
 .wallet-rub {
   margin: 0;
   color: #f4f8ff;
-  font-size: 24px;
+  font-size: 21px;
   line-height: 1.05;
-  font-weight: 700;
+  font-weight: 650;
 }
 
 .wallet-asset {
@@ -279,6 +299,7 @@ body {
 
 .wallet-dot.active {
   background: var(--yellow);
+  box-shadow: 0 0 0 4px rgba(94, 200, 255, 0.12);
 }
 
 .primary-btn {
@@ -380,15 +401,16 @@ body {
   left: 50%;
   transform: translateX(-50%);
   width: min(460px, 100%);
-  background: rgba(15, 18, 24, 0.96);
-  border-top: 1px solid #2e3443;
+  background: rgba(15, 19, 27, 0.94);
+  border-top: 1px solid #323b4d;
   border-top-left-radius: 22px;
   border-top-right-radius: 22px;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   padding: 8px 6px calc(10px + env(safe-area-inset-bottom));
   min-height: 90px;
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.28);
 }
 
 .bottom-nav button {
@@ -443,7 +465,7 @@ body {
   height: 56px;
   border-radius: 16px;
   justify-self: center;
-  box-shadow: 0 2px 8px rgba(94, 200, 255, 0.16);
+  box-shadow: 0 1px 5px rgba(94, 200, 255, 0.1);
 }
 
 .scan-btn .nav-icon {

@@ -24,8 +24,6 @@ export default function HomePage({ homeData, telegramId, onTopUpDone }) {
 
   return (
     <div className="page">
-      <h1>Cryp2Scan</h1>
-
       <section className="card balance-card">
         <p className="label">Основной кошелек</p>
         <h2 className="balance-value">{homeData?.balance?.usdt ?? 0} USDT</h2>

@@ -92,51 +92,11 @@ body {
   font-weight: 800;
 }
 
-.home-search {
-  background: #141822;
-  border: 1px solid #2a3040;
-  color: #6f7788;
-  border-radius: 14px;
-  padding: 12px 14px;
-  margin-bottom: 12px;
-}
-
-.home-mini-cards {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.mini-card {
-  background: #151a23;
-  border: 1px solid #2a3040;
-  border-radius: 16px;
-  padding: 12px;
-}
-
-.mini-card p {
-  margin: 0;
-  color: var(--sub);
-  font-size: 12px;
-}
-
-.mini-card h3 {
-  margin: 7px 0 2px;
-  color: #f6f8ff;
-  font-size: 22px;
-}
-
-.mini-card span {
-  color: #7e8798;
-  font-size: 12px;
-}
-
 .home-actions {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 9px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .action-btn {
@@ -214,24 +174,69 @@ body {
   padding: 16px;
 }
 
-.wallet-card-code {
-  margin: 0;
-  color: #c8d0df;
-  font-size: 13px;
-  font-weight: 600;
+.wallet-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.wallet-card-value {
-  margin: 8px 0 6px;
-  color: var(--yellow);
-  font-size: 38px;
-  line-height: 1;
-  letter-spacing: -0.5px;
+.wallet-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wallet-coin {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 800;
+}
+
+.wallet-coin.usdt {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.wallet-coin.ton {
+  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+}
+
+.wallet-coin.btc {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.wallet-card-code {
+  margin: 0 0 2px;
+  color: #eef2fb;
+  font-size: 18px;
+  font-weight: 800;
 }
 
 .wallet-card-caption {
   color: #98a2b5;
-  font-size: 13px;
+  font-size: 12px;
+}
+
+.wallet-right {
+  text-align: right;
+}
+
+.wallet-rub {
+  margin: 0;
+  color: #f4f8ff;
+  font-size: 32px;
+  line-height: 1.05;
+  font-weight: 800;
+}
+
+.wallet-asset {
+  margin: 4px 0 0;
+  color: #9aa3b5;
+  font-size: 16px;
 }
 
 .wallet-dots {

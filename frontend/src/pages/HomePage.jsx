@@ -7,6 +7,7 @@ export default function HomePage({ homeData, telegramId, onTopUpDone }) {
   const [activeBalanceCard, setActiveBalanceCard] = useState(0);
   const shortId = telegramId?.slice(-6) || "000000";
   const balances = homeData?.balance || {};
+  const rateByCode = { USDT: 100, TON: 300, BTC: 9000000 };
 
   const balanceCards = [
     {
@@ -33,6 +34,12 @@ export default function HomePage({ homeData, telegramId, onTopUpDone }) {
     const index = Math.round(container.scrollLeft / cardWidth);
     setActiveBalanceCard(index);
   };
+
+  const formatNumber = (value) =>
+    Number(value || 0).toLocaleString("ru-RU", {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 2
+    });
 
   const topUp = async () => {
     const value = Number(amount);
@@ -64,21 +71,6 @@ export default function HomePage({ homeData, telegramId, onTopUpDone }) {
         <div className="home-badge">CRYP2SCAN</div>
       </section>
 
-      <section className="home-search">Поиск по операциям</section>
-
-      <section className="home-mini-cards">
-        <article className="mini-card">
-          <p>Все операции</p>
-          <h3>₽ 0</h3>
-          <span>Общие траты за месяц</span>
-        </article>
-        <article className="mini-card">
-          <p>Кэшбэк и бонусы</p>
-          <h3>0</h3>
-          <span>Пока начислений нет</span>
-        </article>
-      </section>
-
       <section className="home-actions">
         <button type="button" className="action-btn" onClick={topUp}>
           <span>＋</span>
@@ -92,10 +84,6 @@ export default function HomePage({ homeData, telegramId, onTopUpDone }) {
           <span>⇄</span>
           <small>Обменять</small>
         </button>
-        <button type="button" className="action-btn">
-          <span>⌗</span>
-          <small>Скан</small>
-        </button>
       </section>
 
       <section className="wallet-slider-wrap">
@@ -103,9 +91,21 @@ export default function HomePage({ homeData, telegramId, onTopUpDone }) {
         <div className="wallet-slider" onScroll={onBalanceScroll}>
           {balanceCards.map((card) => (
             <article className="wallet-card" key={card.code}>
-              <p className="wallet-card-code">{card.code}</p>
-              <h2 className="wallet-card-value">{card.amount} {card.code}</h2>
-              <span className="wallet-card-caption">{card.caption}</span>
+              <div className="wallet-row">
+                <div className="wallet-left">
+                  <div className={`wallet-coin ${card.code.toLowerCase()}`}>{card.code.slice(0, 1)}</div>
+                  <div>
+                    <p className="wallet-card-code">{card.code}</p>
+                    <span className="wallet-card-caption">
+                      {card.code === "USDT" ? "Основной баланс" : "Дополнительный баланс"}
+                    </span>
+                  </div>
+                </div>
+                <div className="wallet-right">
+                  <p className="wallet-rub">{formatNumber(card.amount * (rateByCode[card.code] || 0))} ₽</p>
+                  <p className="wallet-asset">{formatNumber(card.amount)} {card.code}</p>
+                </div>
+              </div>
             </article>
           ))}
         </div>

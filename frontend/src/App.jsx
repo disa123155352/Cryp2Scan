@@ -33,6 +33,17 @@ export default function App() {
     if (id) setTelegramId(String(id));
     webApp?.ready?.();
     webApp?.expand?.();
+
+    // Make Telegram system header blend with app theme and request fullscreen where supported.
+    try {
+      webApp?.setHeaderColor?.("#0b0c0f");
+      webApp?.setBackgroundColor?.("#0b0c0f");
+      webApp?.requestFullscreen?.();
+      webApp?.disableVerticalSwipes?.();
+    } catch (error) {
+      // Ignore if a Telegram client does not support one of these methods.
+      console.debug("WebApp UI methods are partially unsupported:", error);
+    }
   }, []);
 
   useEffect(() => {

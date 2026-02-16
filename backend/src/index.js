@@ -526,13 +526,22 @@ app.get("/api/wallet/status", async (req, res) => {
       return res.json({ connected: false });
     }
 
-    const balances = await fetchOnchainBalances(link.wallet_address);
+    let balances = null;
+    let warning = "";
+    try {
+      balances = await fetchOnchainBalances(link.wallet_address);
+    } catch (error) {
+      warning = "Кошелек подключен, но баланс временно недоступен";
+      balances = { ton: 0, usdt: 0 };
+    }
+
     res.json({
       connected: true,
       walletAddress: link.wallet_address,
       network: link.network || "mainnet",
       balances,
-      updatedAt: link.updated_at || new Date().toISOString()
+      updatedAt: link.updated_at || new Date().toISOString(),
+      warning
     });
   } catch (error) {
     res.status(500).json({ error: "Не удалось загрузить баланс кошелька", details: error.message });

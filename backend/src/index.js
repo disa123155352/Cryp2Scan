@@ -580,13 +580,19 @@ startServer();
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const MINI_APP_URL = process.env.MINI_APP_URL || "https://example.com";
 
+function buildMiniAppUrl(baseUrl, telegramId) {
+  const separator = baseUrl.includes("?") ? "&" : "?";
+  return `${baseUrl}${separator}tg_id=${encodeURIComponent(String(telegramId))}`;
+}
+
 if (BOT_TOKEN) {
   const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 
   bot.onText(/\/start/, (msg) => {
+    const webAppUrl = buildMiniAppUrl(MINI_APP_URL, msg.from?.id || msg.chat?.id || "");
     bot.sendMessage(msg.chat.id, "Добро пожаловать в Cryp2Scan", {
       reply_markup: {
-        inline_keyboard: [[{ text: "Open Cryp2Scan", web_app: { url: MINI_APP_URL } }]]
+        inline_keyboard: [[{ text: "Open Cryp2Scan", web_app: { url: webAppUrl } }]]
       }
     });
   });

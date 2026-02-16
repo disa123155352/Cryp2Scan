@@ -24,6 +24,8 @@ function getTelegramUserIdFromInitData(initDataRaw = "") {
 function getTelegramUserIdFallbackFromUrl() {
   try {
     const urlParams = new URLSearchParams(window.location.search);
+    const directId = urlParams.get("tg_id");
+    if (directId) return String(directId);
     const tgWebAppData = urlParams.get("tgWebAppData");
     if (!tgWebAppData) return "";
     const decoded = decodeURIComponent(tgWebAppData);
@@ -56,21 +58,41 @@ export default function App() {
   };
 
   useEffect(() => {
-    const webApp = window.Telegram?.WebApp;
-    const idFromUnsafe = webApp?.initDataUnsafe?.user?.id ? String(webApp.initDataUnsafe.user.id) : "";
-    const idFromInitData = getTelegramUserIdFromInitData(webApp?.initData || "");
-    const idFromUrl = getTelegramUserIdFallbackFromUrl();
-    const resolvedId = idFromUnsafe || idFromInitData || idFromUrl;
+    let attempts = 0;
+    let stopped = false;
 
-    if (resolvedId) {
-      setTelegramId(resolvedId);
-    }
-    setTelegramReady(true);
-    webApp?.ready?.();
-    webApp?.expand?.();
+    const tryResolveTelegramId = () => {
+      if (stopped) return;
+      attempts += 1;
+
+      const webApp = window.Telegram?.WebApp;
+      const idFromUnsafe = webApp?.initDataUnsafe?.user?.id ? String(webApp.initDataUnsafe.user.id) : "";
+      const idFromInitData = getTelegramUserIdFromInitData(webApp?.initData || "");
+      const idFromUrl = getTelegramUserIdFallbackFromUrl();
+      const resolvedId = idFromUnsafe || idFromInitData || idFromUrl;
+
+      webApp?.ready?.();
+      webApp?.expand?.();
+
+      if (resolvedId) {
+        setTelegramId(resolvedId);
+        setTelegramReady(true);
+        return;
+      }
+
+      if (attempts >= 12) {
+        setTelegramReady(true);
+        return;
+      }
+
+      setTimeout(tryResolveTelegramId, 300);
+    };
+
+    tryResolveTelegramId();
 
     // Make Telegram system header blend with app theme and request fullscreen where supported.
     try {
+      const webApp = window.Telegram?.WebApp;
       webApp?.setHeaderColor?.("#0b0c0f");
       webApp?.setBackgroundColor?.("#0b0c0f");
       webApp?.requestFullscreen?.();
@@ -79,6 +101,10 @@ export default function App() {
       // Ignore if a Telegram client does not support one of these methods.
       console.debug("WebApp UI methods are partially unsupported:", error);
     }
+
+    return () => {
+      stopped = true;
+    };
   }, []);
 
   useEffect(() => {

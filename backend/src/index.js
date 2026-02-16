@@ -100,6 +100,40 @@ async function getHistoryFromDb(telegramId) {
   }
 }
 
+async function initializeDatabaseSchema() {
+  if (!HAS_DATABASE) return;
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      telegram_id TEXT UNIQUE NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS balances (
+      user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      usdt NUMERIC(18,2) NOT NULL DEFAULT 1250.50,
+      ton NUMERIC(18,6) NOT NULL DEFAULT 0,
+      btc NUMERIC(18,8) NOT NULL DEFAULT 0,
+      updated_at TIMESTAMP DEFAULT NOW()
+    );
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS transactions (
+      id BIGSERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      store_name TEXT NOT NULL,
+      amount_rub NUMERIC(18,2) NOT NULL,
+      amount_usdt NUMERIC(18,2) NOT NULL,
+      status TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+  `);
+}
+
 app.get("/api/health", (req, res) => {
   res.json({
     ok: true,
@@ -276,9 +310,25 @@ app.get("/api/profile", (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Backend started on http://localhost:${PORT}`);
-});
+async function startServer() {
+  if (HAS_DATABASE) {
+    try {
+      await initializeDatabaseSchema();
+      console.log("Postgres schema ready");
+    } catch (error) {
+      console.error("Postgres init failed:", error.message);
+      process.exit(1);
+    }
+  } else {
+    console.log("DATABASE_URL is missing, using memory storage");
+  }
+
+  app.listen(PORT, () => {
+    console.log(`Backend started on http://localhost:${PORT}`);
+  });
+}
+
+startServer();
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const MINI_APP_URL = process.env.MINI_APP_URL || "https://example.com";

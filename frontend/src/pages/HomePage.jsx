@@ -4,7 +4,35 @@ import { apiPost } from "../api/client";
 export default function HomePage({ homeData, telegramId, onTopUpDone }) {
   const [amount, setAmount] = useState("100");
   const [status, setStatus] = useState({ type: "", text: "" });
+  const [activeBalanceCard, setActiveBalanceCard] = useState(0);
   const shortId = telegramId?.slice(-6) || "000000";
+  const balances = homeData?.balance || {};
+
+  const balanceCards = [
+    {
+      code: "USDT",
+      amount: Number(balances.usdt || 0),
+      caption: "Основной баланс"
+    },
+    {
+      code: "TON",
+      amount: Number(balances.ton || 0),
+      caption: "Вторичный баланс"
+    },
+    {
+      code: "BTC",
+      amount: Number(balances.btc || 0),
+      caption: "Вторичный баланс"
+    }
+  ];
+
+  const onBalanceScroll = (event) => {
+    const container = event.currentTarget;
+    const cardWidth = container.clientWidth;
+    if (!cardWidth) return;
+    const index = Math.round(container.scrollLeft / cardWidth);
+    setActiveBalanceCard(index);
+  };
 
   const topUp = async () => {
     const value = Number(amount);
@@ -70,18 +98,24 @@ export default function HomePage({ homeData, telegramId, onTopUpDone }) {
         </button>
       </section>
 
-      <section className="card balance-card">
-        <p className="label">Основной кошелек</p>
-        <h2 className="balance-value">{homeData?.balance?.usdt ?? 0} USDT</h2>
-        <div className="assets">
-          <div className="asset">
-            <span>TON</span>
-            <span>0</span>
-          </div>
-          <div className="asset">
-            <span>BTC</span>
-            <span>0</span>
-          </div>
+      <section className="wallet-slider-wrap">
+        <p className="label">Кошелек</p>
+        <div className="wallet-slider" onScroll={onBalanceScroll}>
+          {balanceCards.map((card) => (
+            <article className="wallet-card" key={card.code}>
+              <p className="wallet-card-code">{card.code}</p>
+              <h2 className="wallet-card-value">{card.amount} {card.code}</h2>
+              <span className="wallet-card-caption">{card.caption}</span>
+            </article>
+          ))}
+        </div>
+        <div className="wallet-dots">
+          {balanceCards.map((card, index) => (
+            <span
+              key={card.code}
+              className={`wallet-dot ${activeBalanceCard === index ? "active" : ""}`}
+            />
+          ))}
         </div>
       </section>
 

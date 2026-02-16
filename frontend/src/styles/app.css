@@ -185,28 +185,71 @@ body {
   margin-bottom: 6px;
 }
 
-.balance-value {
-  margin: 6px 0 12px;
-  font-size: 42px;
-  line-height: 1;
-  font-weight: 800;
-  color: var(--yellow);
+.wallet-slider-wrap {
+  margin-bottom: 14px;
 }
 
-.assets {
-  margin: 12px 0;
-  display: grid;
-  gap: 9px;
-}
-
-.asset {
+.wallet-slider {
   display: flex;
-  justify-content: space-between;
-  color: #ecf0f8;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.wallet-slider::-webkit-scrollbar {
+  display: none;
+}
+
+.wallet-card {
+  min-width: calc(100% - 2px);
+  scroll-snap-align: start;
+  background:
+    radial-gradient(circle at 100% -10%, rgba(255, 212, 0, 0.22), transparent 42%),
+    linear-gradient(140deg, #171a22 0%, #10131a 75%);
   border: 1px solid #343a48;
-  border-radius: 13px;
-  padding: 11px 12px;
-  background: rgba(255, 255, 255, 0.02);
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.wallet-card-code {
+  margin: 0;
+  color: #c8d0df;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.wallet-card-value {
+  margin: 8px 0 6px;
+  color: var(--yellow);
+  font-size: 38px;
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+
+.wallet-card-caption {
+  color: #98a2b5;
+  font-size: 13px;
+}
+
+.wallet-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.wallet-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #40485c;
+}
+
+.wallet-dot.active {
+  background: var(--yellow);
 }
 
 .primary-btn {

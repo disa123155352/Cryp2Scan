@@ -55,7 +55,7 @@ export default function ScanPage({ onPaid }) {
           },
           {
             preferredCamera: "environment",
-            maxScansPerSecond: 10,
+            maxScansPerSecond: 25,
             highlightScanRegion: true,
             highlightCodeOutline: true
           }
@@ -63,6 +63,7 @@ export default function ScanPage({ onPaid }) {
 
         scannerRef.current = scanner;
         await scanner.start();
+        await scanner.setInversionMode("both");
       } catch {
         setScanState("failed");
         setScanError("No camera access. Allow camera in browser.");

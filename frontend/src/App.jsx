@@ -7,6 +7,7 @@ import ScanPage from "./pages/ScanPage";
 import ServicesPage from "./pages/ServicesPage";
 import ProfilePage from "./pages/ProfilePage";
 import TopUpPage from "./pages/TopUpPage";
+import SettingsPage from "./pages/SettingsPage";
 
 export default function App() {
   const [tab, setTab] = useState("home");
@@ -65,13 +66,15 @@ export default function App() {
         }}
       />
     );
+  } else if (screen === "settings") {
+    content = <SettingsPage telegramId={telegramId} onBack={() => setScreen("tabs")} />;
   } else {
     if (tab === "home") {
       content = <HomePage homeData={homeData} telegramId={telegramId} onOpenTopUp={() => setScreen("topup")} />;
     }
     if (tab === "history") content = <HistoryPage items={history} />;
     if (tab === "scan") content = <ScanPage telegramId={telegramId} onPaid={loadAll} />;
-    if (tab === "services") content = <ServicesPage />;
+    if (tab === "services") content = <ServicesPage onOpenSettings={() => setScreen("settings")} />;
     if (tab === "profile") content = <ProfilePage profile={profile} />;
   }
 

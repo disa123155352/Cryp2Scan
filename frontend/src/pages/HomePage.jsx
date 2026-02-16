@@ -1,24 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useTonConnectUI, useTonWallet } from "@tonconnect/ui-react";
-import { apiGet, apiPost } from "../api/client";
+import { useTonWallet } from "@tonconnect/ui-react";
+import { apiGet } from "../api/client";
 
 export default function HomePage({ homeData, telegramId, onOpenTopUp }) {
   const [activeBalanceCard, setActiveBalanceCard] = useState(0);
-  const [walletStatus, setWalletStatus] = useState({ connected: false, loading: true });
-  const [walletSyncStatus, setWalletSyncStatus] = useState("");
-  const [tonConnectUI] = useTonConnectUI();
+  const [walletStatus, setWalletStatus] = useState({ connected: false, balances: { usdt: 0, ton: 0 } });
   const tonWallet = useTonWallet();
-  const previousTonAddress = useRef("");
   const isWalletConnectedInSdk = Boolean(tonWallet?.account?.address);
   const shortId = telegramId?.slice(-6) || "000000";
-  const backendBalances = homeData?.balance || {};
   const onchainBalances = walletStatus?.balances || {};
+  const previousTonAddress = useRef("");
 
   const balances = useMemo(() => ({
-    usdt: (walletStatus.connected || isWalletConnectedInSdk) ? Number(onchainBalances.usdt || 0) : Number(backendBalances.usdt || 0),
-    ton: (walletStatus.connected || isWalletConnectedInSdk) ? Number(onchainBalances.ton || 0) : Number(backendBalances.ton || 0),
-    btc: Number(backendBalances.btc || 0)
-  }), [walletStatus.connected, isWalletConnectedInSdk, onchainBalances.usdt, onchainBalances.ton, backendBalances.usdt, backendBalances.ton, backendBalances.btc]);
+    usdt: (walletStatus.connected || isWalletConnectedInSdk) ? Number(onchainBalances.usdt || 0) : 0,
+    ton: (walletStatus.connected || isWalletConnectedInSdk) ? Number(onchainBalances.ton || 0) : 0,
+    btc: 0
+  }), [walletStatus.connected, isWalletConnectedInSdk, onchainBalances.usdt, onchainBalances.ton]);
 
   const rateByCode = { USDT: 100, TON: 300, BTC: 9000000 };
 
@@ -56,14 +53,13 @@ export default function HomePage({ homeData, telegramId, onOpenTopUp }) {
 
   const loadWalletStatus = async () => {
     try {
-      setWalletStatus((previous) => ({ ...previous, loading: true }));
       const data = await apiGet(`/wallet/status?telegramId=${encodeURIComponent(telegramId)}`);
-      setWalletStatus({ ...data, loading: false });
-      if (data?.warning) {
-        setWalletSyncStatus(data.warning);
-      }
+      setWalletStatus({
+        connected: Boolean(data?.connected),
+        balances: data?.balances || { usdt: 0, ton: 0 }
+      });
     } catch {
-      setWalletStatus({ connected: false, loading: false });
+      setWalletStatus({ connected: false, balances: { usdt: 0, ton: 0 } });
     }
   };
 
@@ -73,68 +69,14 @@ export default function HomePage({ homeData, telegramId, onOpenTopUp }) {
   }, [telegramId]);
 
   useEffect(() => {
-    const syncWalletState = async () => {
-      const currentTonAddress = tonWallet?.account?.address || "";
-      const previousAddress = previousTonAddress.current;
-
-      if (currentTonAddress && currentTonAddress !== previousAddress) {
-        try {
-          setWalletSyncStatus("Подключаем кошелек...");
-          await apiPost("/wallet/connect", {
-            telegramId,
-            walletAddress: currentTonAddress,
-            network: tonWallet?.account?.chain || "mainnet"
-          });
-          try {
-            await loadWalletStatus();
-          } catch {
-            // fallback handled below
-          }
-          setWalletStatus((prev) => ({
-            ...prev,
-            connected: true,
-            walletAddress: currentTonAddress
-          }));
-          setWalletSyncStatus("Кошелек подключен");
-        } catch {
-          setWalletSyncStatus("Ошибка подключения кошелька");
-        }
-      }
-
-      if (!currentTonAddress && previousAddress) {
-        try {
-          setWalletSyncStatus("Отключаем кошелек...");
-          await apiPost("/wallet/disconnect", { telegramId });
-          await loadWalletStatus();
-          setWalletSyncStatus("Кошелек отключен");
-        } catch {
-          setWalletSyncStatus("Ошибка отключения кошелька");
-        }
-      }
-
-      previousTonAddress.current = currentTonAddress;
-    };
-
-    syncWalletState();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tonWallet?.account?.address, telegramId]);
-
-  const openWalletConnectModal = async () => {
-    await tonConnectUI.openModal();
-  };
-
-  const disconnectWallet = async () => {
-    try {
-      setWalletSyncStatus("Отключаем кошелек...");
-      await tonConnectUI.disconnect();
-      await apiPost("/wallet/disconnect", { telegramId });
-      await loadWalletStatus();
-      previousTonAddress.current = "";
-      setWalletSyncStatus("Кошелек отключен");
-    } catch {
-      setWalletSyncStatus("Не удалось отключить кошелек");
+    const currentTonAddress = tonWallet?.account?.address || "";
+    const previousAddress = previousTonAddress.current;
+    if (currentTonAddress !== previousAddress) {
+      loadWalletStatus();
     }
-  };
+    previousTonAddress.current = currentTonAddress;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tonWallet?.account?.address]);
 
   return (
     <div className="page">
@@ -147,32 +89,6 @@ export default function HomePage({ homeData, telegramId, onOpenTopUp }) {
           </div>
         </div>
         <div className="home-badge">CRYP2SCAN</div>
-      </section>
-
-      <section className="card wallet-connect-card">
-        <div>
-          <p className="label">Telegram Wallet</p>
-          <p className="wallet-connect-title">
-            {walletStatus.loading
-              ? "Проверяем подключение..."
-              : (walletStatus.connected || isWalletConnectedInSdk)
-                ? "Кошелек подключен"
-                : "Кошелек не подключен"}
-          </p>
-          {(walletStatus.connected || isWalletConnectedInSdk) && (walletStatus.walletAddress || tonWallet?.account?.address) && (
-            <p className="wallet-connect-address">{walletStatus.walletAddress || tonWallet?.account?.address}</p>
-          )}
-          {walletSyncStatus && <p className="wallet-connect-sync">{walletSyncStatus}</p>}
-        </div>
-        {(walletStatus.connected || isWalletConnectedInSdk) ? (
-          <button type="button" className="secondary-btn wallet-connect-btn" onClick={disconnectWallet}>
-            Отключить
-          </button>
-        ) : (
-          <button type="button" className="primary-btn wallet-connect-btn" onClick={openWalletConnectModal}>
-            Подключить
-          </button>
-        )}
       </section>
 
       <section className="home-mini-cards">

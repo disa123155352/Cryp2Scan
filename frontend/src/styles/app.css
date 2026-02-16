@@ -639,3 +639,34 @@ body {
   opacity: 0.58;
   cursor: not-allowed;
 }
+
+.services-card h2 {
+  margin: 0 0 8px;
+  font-size: 24px;
+}
+
+.services-card p {
+  margin: 0 0 14px;
+  color: var(--sub);
+  font-size: 14px;
+}
+
+.services-btn {
+  margin-top: 6px;
+}
+
+.settings-page h1 {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.settings-line {
+  margin: 0 0 10px;
+  color: #e7edfa;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.settings-btn {
+  margin-top: 8px;
+}

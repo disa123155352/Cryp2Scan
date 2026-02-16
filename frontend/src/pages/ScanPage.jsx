@@ -24,7 +24,16 @@ export default function ScanPage({ onPaid }) {
           async (result) => {
             if (!active) return;
 
-            const raw = result?.data || "";
+            // qr-scanner in different environments can return either:
+            // 1) string (decoded text) or 2) object with .data
+            const raw =
+              typeof result === "string"
+                ? result
+                : typeof result?.data === "string"
+                  ? result.data
+                  : "";
+
+            if (!raw) return;
             const parts = Object.fromEntries(raw.split(";").map((p) => p.split("=")));
 
             if (!parts.store || !parts.amount) {
@@ -45,6 +54,8 @@ export default function ScanPage({ onPaid }) {
             }
           },
           {
+            preferredCamera: "environment",
+            maxScansPerSecond: 10,
             highlightScanRegion: true,
             highlightCodeOutline: true
           }

@@ -46,6 +46,124 @@ body {
   font-weight: 800;
 }
 
+.home-profile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.home-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.home-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #1f2430;
+  border: 1px solid #343a48;
+  color: var(--yellow);
+  font-weight: 700;
+}
+
+.home-name {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.home-sub {
+  margin: 1px 0 0;
+  color: var(--sub);
+  font-size: 12px;
+}
+
+.home-badge {
+  background: linear-gradient(135deg, #ffd400, #ffbf00);
+  color: #15171d;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.home-search {
+  background: #141822;
+  border: 1px solid #2a3040;
+  color: #6f7788;
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.home-mini-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.mini-card {
+  background: #151a23;
+  border: 1px solid #2a3040;
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.mini-card p {
+  margin: 0;
+  color: var(--sub);
+  font-size: 12px;
+}
+
+.mini-card h3 {
+  margin: 7px 0 2px;
+  color: #f6f8ff;
+  font-size: 22px;
+}
+
+.mini-card span {
+  color: #7e8798;
+  font-size: 12px;
+}
+
+.home-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 9px;
+  margin-bottom: 12px;
+}
+
+.action-btn {
+  border: 1px solid #2b3140;
+  border-radius: 14px;
+  background: #151a23;
+  color: #dfe4ef;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.action-btn span {
+  color: var(--yellow);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.action-btn small {
+  font-size: 11px;
+  color: #b2b9c8;
+}
+
 .card {
   background: linear-gradient(180deg, var(--card) 0%, #121620 100%);
   border: 1px solid var(--line);

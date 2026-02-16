@@ -2,6 +2,44 @@ import { useEffect, useRef, useState } from "react";
 import QrScanner from "qr-scanner";
 import { apiPost } from "../api/client";
 
+function parseQrPayload(raw) {
+  if (!raw) return null;
+
+  // Format 1: store=Coffee;amount=450
+  if (raw.includes("store=") && raw.includes("amount=")) {
+    const parts = Object.fromEntries(raw.split(";").map((p) => p.split("=")));
+    if (parts.store && parts.amount) {
+      return { store: parts.store, amount: Number(parts.amount) };
+    }
+  }
+
+  // Format 2: JSON {"store":"Coffee","amount":450}
+  try {
+    const data = JSON.parse(raw);
+    const store = data.store || data.merchant || data.shop;
+    const amount = Number(data.amount || data.sum || data.total);
+    if (store && Number.isFinite(amount) && amount > 0) {
+      return { store, amount };
+    }
+  } catch {
+    // ignore invalid JSON
+  }
+
+  // Format 3: URL with params ?store=Coffee&amount=450
+  try {
+    const url = new URL(raw);
+    const store = url.searchParams.get("store") || url.searchParams.get("merchant");
+    const amount = Number(url.searchParams.get("amount") || url.searchParams.get("sum"));
+    if (store && Number.isFinite(amount) && amount > 0) {
+      return { store, amount };
+    }
+  } catch {
+    // ignore invalid URL
+  }
+
+  return null;
+}
+
 export default function ScanPage({ telegramId, onPaid }) {
   const videoRef = useRef(null);
   const scannerRef = useRef(null);
@@ -34,17 +72,17 @@ export default function ScanPage({ telegramId, onPaid }) {
                   : "";
 
             if (!raw) return;
-            const parts = Object.fromEntries(raw.split(";").map((p) => p.split("=")));
+            const parsed = parseQrPayload(raw);
 
-            if (!parts.store || !parts.amount) {
+            if (!parsed) {
               setScanError("Неверный формат QR");
               return;
             }
 
             try {
               const data = await apiPost("/scan/quote", {
-                storeName: parts.store,
-                amountRub: Number(parts.amount)
+                storeName: parsed.store,
+                amountRub: parsed.amount
               });
               setQuote(data);
               setScanState("scanned");

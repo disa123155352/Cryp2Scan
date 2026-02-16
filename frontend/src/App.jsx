@@ -70,7 +70,14 @@ export default function App() {
     content = <SettingsPage telegramId={telegramId} onBack={() => setScreen("tabs")} />;
   } else {
     if (tab === "home") {
-      content = <HomePage homeData={homeData} telegramId={telegramId} onOpenTopUp={() => setScreen("topup")} />;
+      content = (
+        <HomePage
+          homeData={homeData}
+          telegramId={telegramId}
+          onOpenTopUp={() => setScreen("topup")}
+          onOpenSettings={() => setScreen("settings")}
+        />
+      );
     }
     if (tab === "history") content = <HistoryPage items={history} />;
     if (tab === "scan") content = <ScanPage telegramId={telegramId} onPaid={loadAll} />;

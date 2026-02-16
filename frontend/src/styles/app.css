@@ -102,8 +102,35 @@ body {
 }
 
 .home-status {
-  margin: -4px 2px 12px;
+  margin: 2px 2px 10px;
   font-size: 13px;
+  color: var(--sub);
+}
+
+.home-wallet-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.home-wallet-prompt-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+  color: #e9eef9;
+}
+
+.home-wallet-prompt-sub {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--sub);
+}
+
+.home-wallet-prompt-btn {
+  width: auto;
+  min-width: 126px;
 }
 
 .wallet-connect-card {

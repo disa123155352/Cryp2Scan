@@ -108,8 +108,6 @@ export default function ScanPage({ telegramId, onPaid }) {
 
   return (
     <div className="page">
-      <h1>Скан</h1>
-
       {!quote && (
         <section className="card scan-card">
           <p className="label">Камера</p>

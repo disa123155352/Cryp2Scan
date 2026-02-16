@@ -1,8 +1,6 @@
 export default function ProfilePage({ profile }) {
   return (
     <div className="page">
-      <h1>Профиль</h1>
-
       <section className="card profile-card">
         <p><b>ID Telegram:</b> {profile?.telegramId || "неизвестно"}</p>
         <p><b>Поддержка:</b> {profile?.support || "@support"}</p>

@@ -7,8 +7,6 @@ export default function HistoryPage({ items }) {
 
   return (
     <div className="page">
-      <h1>История</h1>
-
       {!items.length ? (
         <section className="card">Операций пока нет</section>
       ) : (

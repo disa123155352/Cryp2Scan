@@ -1,4 +1,7 @@
-const API_BASE = "http://localhost:4000/api";
+const DEFAULT_PROD_API = "https://cryp2scan.onrender.com/api";
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  (window.location.hostname === "localhost" ? "http://localhost:4000/api" : DEFAULT_PROD_API);
 
 export async function apiGet(path) {
   const res = await fetch(`${API_BASE}${path}`);

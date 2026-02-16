@@ -477,3 +477,131 @@ body {
   font-size: 10px;
   font-weight: 700;
 }
+
+.topup-page h1 {
+  margin-bottom: 6px;
+}
+
+.topup-header {
+  margin-bottom: 12px;
+}
+
+.topup-header p {
+  margin: 0;
+  color: var(--sub);
+  font-size: 14px;
+}
+
+.topup-back {
+  border: none;
+  background: transparent;
+  color: #9eb2cf;
+  font-size: 14px;
+  padding: 0;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.topup-methods-list {
+  display: grid;
+  gap: 10px;
+}
+
+.topup-method {
+  width: 100%;
+  border: 1px solid #2f3748;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #151b27 0%, #121722 100%);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.topup-method p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.topup-method span {
+  color: var(--sub);
+  font-size: 12px;
+}
+
+.topup-method i {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid #3a4355;
+  display: inline-block;
+}
+
+.topup-method.active {
+  border-color: #5ec8ff;
+  box-shadow: 0 0 0 1px rgba(94, 200, 255, 0.16);
+}
+
+.topup-method.active i {
+  border-color: #5ec8ff;
+  background: radial-gradient(circle, #5ec8ff 46%, transparent 49%);
+}
+
+.topup-presets {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.topup-presets button {
+  border: 1px solid #303747;
+  border-radius: 11px;
+  background: #121722;
+  color: #d3daea;
+  padding: 9px 0;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.topup-presets button.active {
+  border-color: #5ec8ff;
+  color: #e9f7ff;
+  background: #16202d;
+}
+
+.topup-summary {
+  background: #101521;
+  border: 1px solid #2c3445;
+  border-radius: 14px;
+  padding: 12px;
+  margin-top: 2px;
+  margin-bottom: 12px;
+}
+
+.topup-summary p {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--sub);
+  font-size: 13px;
+}
+
+.topup-summary p + p {
+  margin-top: 8px;
+}
+
+.topup-summary b {
+  color: #e7f5ff;
+  font-size: 14px;
+}
+
+.topup-submit:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}

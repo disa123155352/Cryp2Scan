@@ -1,9 +1,6 @@
 import { useState } from "react";
-import { apiPost } from "../api/client";
 
-export default function HomePage({ homeData, telegramId, onTopUpDone }) {
-  const [status, setStatus] = useState({ type: "", text: "" });
-  const [isTopUpLoading, setIsTopUpLoading] = useState(false);
+export default function HomePage({ homeData, telegramId, onOpenTopUp }) {
   const [activeBalanceCard, setActiveBalanceCard] = useState(0);
   const shortId = telegramId?.slice(-6) || "000000";
   const balances = homeData?.balance || {};
@@ -41,22 +38,6 @@ export default function HomePage({ homeData, telegramId, onTopUpDone }) {
       maximumFractionDigits: 2
     });
 
-  const topUp = async () => {
-    const value = 100;
-
-    try {
-      setIsTopUpLoading(true);
-      setStatus({ type: "label", text: "Пополнение..." });
-      await apiPost("/topup", { telegramId, amountUsdt: value });
-      setStatus({ type: "ok", text: `Баланс пополнен на ${value} USDT` });
-      onTopUpDone?.();
-    } catch {
-      setStatus({ type: "bad", text: "Ошибка пополнения" });
-    } finally {
-      setIsTopUpLoading(false);
-    }
-  };
-
   return (
     <div className="page">
       <section className="home-profile">
@@ -84,9 +65,9 @@ export default function HomePage({ homeData, telegramId, onTopUpDone }) {
       </section>
 
       <section className="home-actions">
-        <button type="button" className={`action-btn action-btn-primary ${isTopUpLoading ? "loading" : ""}`} onClick={topUp}>
+        <button type="button" className="action-btn action-btn-primary" onClick={onOpenTopUp}>
           <span>＋</span>
-          <small>{isTopUpLoading ? "Пополнение..." : "Пополнить"}</small>
+          <small>Пополнить</small>
         </button>
         <button type="button" className="action-btn">
           <span>↗</span>
@@ -97,7 +78,6 @@ export default function HomePage({ homeData, telegramId, onTopUpDone }) {
           <small>Обменять</small>
         </button>
       </section>
-      {status.text && <p className={`home-status ${status.type}`}>{status.text}</p>}
 
       <section className="wallet-slider-wrap">
         <p className="label">Кошелек</p>

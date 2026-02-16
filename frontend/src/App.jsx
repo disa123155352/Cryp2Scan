@@ -6,9 +6,11 @@ import HistoryPage from "./pages/HistoryPage";
 import ScanPage from "./pages/ScanPage";
 import ServicesPage from "./pages/ServicesPage";
 import ProfilePage from "./pages/ProfilePage";
+import TopUpPage from "./pages/TopUpPage";
 
 export default function App() {
   const [tab, setTab] = useState("home");
+  const [screen, setScreen] = useState("tabs");
   const [telegramId, setTelegramId] = useState("demo_user");
   const [homeData, setHomeData] = useState(null);
   const [history, setHistory] = useState([]);
@@ -51,18 +53,32 @@ export default function App() {
   }, [telegramId]);
 
   let content = null;
-  if (tab === "home") {
-    content = <HomePage homeData={homeData} telegramId={telegramId} onTopUpDone={loadAll} />;
+  if (screen === "topup") {
+    content = (
+      <TopUpPage
+        telegramId={telegramId}
+        onBack={() => setScreen("tabs")}
+        onTopUpDone={async () => {
+          await loadAll();
+          setTab("home");
+          setScreen("tabs");
+        }}
+      />
+    );
+  } else {
+    if (tab === "home") {
+      content = <HomePage homeData={homeData} telegramId={telegramId} onOpenTopUp={() => setScreen("topup")} />;
+    }
+    if (tab === "history") content = <HistoryPage items={history} />;
+    if (tab === "scan") content = <ScanPage telegramId={telegramId} onPaid={loadAll} />;
+    if (tab === "services") content = <ServicesPage />;
+    if (tab === "profile") content = <ProfilePage profile={profile} />;
   }
-  if (tab === "history") content = <HistoryPage items={history} />;
-  if (tab === "scan") content = <ScanPage telegramId={telegramId} onPaid={loadAll} />;
-  if (tab === "services") content = <ServicesPage />;
-  if (tab === "profile") content = <ProfilePage profile={profile} />;
 
   return (
     <div className="app">
       <main className="content">{content}</main>
-      <BottomNav tab={tab} setTab={setTab} />
+      {screen === "tabs" && <BottomNav tab={tab} setTab={setTab} />}
     </div>
   );
 }

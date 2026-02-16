@@ -17,7 +17,8 @@ const DEFAULT_TELEGRAM_ID = "demo_user";
 
 const memoryState = {
   balance: { usdt: 1250.5, ton: 0, btc: 0 },
-  history: []
+  history: [],
+  wallets: {}
 };
 
 function toNumber(value) {
@@ -132,6 +133,101 @@ async function initializeDatabaseSchema() {
       created_at TIMESTAMP DEFAULT NOW()
     );
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_wallets (
+      user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      wallet_address TEXT NOT NULL,
+      network TEXT DEFAULT 'mainnet',
+      updated_at TIMESTAMP DEFAULT NOW()
+    );
+  `);
+}
+
+async function getWalletLinkFromDb(telegramId) {
+  const client = await pool.connect();
+  try {
+    const userId = await ensureUserAndBalance(client, telegramId);
+    const result = await client.query(
+      `
+        SELECT wallet_address, network, updated_at
+        FROM user_wallets
+        WHERE user_id = $1
+        LIMIT 1
+      `,
+      [userId]
+    );
+    return result.rows[0] || null;
+  } finally {
+    client.release();
+  }
+}
+
+async function saveWalletLinkToDb(telegramId, walletAddress, network = "mainnet") {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const userId = await ensureUserAndBalance(client, telegramId);
+    await client.query(
+      `
+        INSERT INTO user_wallets (user_id, wallet_address, network, updated_at)
+        VALUES ($1, $2, $3, NOW())
+        ON CONFLICT (user_id)
+        DO UPDATE SET wallet_address = EXCLUDED.wallet_address, network = EXCLUDED.network, updated_at = NOW()
+      `,
+      [userId, walletAddress, network]
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function deleteWalletLinkFromDb(telegramId) {
+  const client = await pool.connect();
+  try {
+    const userId = await ensureUserAndBalance(client, telegramId);
+    await client.query("DELETE FROM user_wallets WHERE user_id = $1", [userId]);
+  } finally {
+    client.release();
+  }
+}
+
+async function fetchTonAccountTonBalance(address) {
+  const response = await fetch(`https://tonapi.io/v2/accounts/${encodeURIComponent(address)}`);
+  if (!response.ok) throw new Error("Не удалось получить баланс TON");
+  const data = await response.json();
+  const nanoTon = Number(data?.balance || 0);
+  return +(nanoTon / 1e9).toFixed(6);
+}
+
+async function fetchTonAccountUsdtBalance(address) {
+  const response = await fetch(`https://tonapi.io/v2/accounts/${encodeURIComponent(address)}/jettons`);
+  if (!response.ok) throw new Error("Не удалось получить баланс USDT");
+
+  const data = await response.json();
+  const balances = Array.isArray(data?.balances) ? data.balances : [];
+  const usdtRow = balances.find((item) => {
+    const symbol = String(item?.jetton?.symbol || "").toUpperCase();
+    return symbol === "USDT" || symbol === "USD₮";
+  });
+
+  if (!usdtRow) return 0;
+
+  const rawBalance = Number(usdtRow.balance || 0);
+  const decimals = Number(usdtRow?.jetton?.decimals || 6);
+  return +(rawBalance / 10 ** decimals).toFixed(6);
+}
+
+async function fetchOnchainBalances(address) {
+  const [ton, usdt] = await Promise.all([
+    fetchTonAccountTonBalance(address),
+    fetchTonAccountUsdtBalance(address)
+  ]);
+  return { ton, usdt };
 }
 
 app.get("/api/health", (req, res) => {
@@ -368,6 +464,79 @@ app.get("/api/profile", (req, res) => {
       { title: "Политика конфиденциальности", url: "https://example.com/privacy" }
     ]
   });
+});
+
+app.post("/api/wallet/connect", async (req, res) => {
+  const telegramId = resolveTelegramId(req, req.body || {});
+  const walletAddress = String(req.body?.walletAddress || "").trim();
+  const network = String(req.body?.network || "mainnet").trim() || "mainnet";
+
+  if (!telegramId || !walletAddress) {
+    return res.status(400).json({ error: "Нужны telegramId и walletAddress" });
+  }
+
+  try {
+    if (HAS_DATABASE) {
+      await saveWalletLinkToDb(telegramId, walletAddress, network);
+    } else {
+      memoryState.wallets[telegramId] = {
+        wallet_address: walletAddress,
+        network,
+        updated_at: new Date().toISOString()
+      };
+    }
+
+    res.json({
+      status: "CONNECTED",
+      walletAddress,
+      network
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Не удалось сохранить подключение", details: error.message });
+  }
+});
+
+app.post("/api/wallet/disconnect", async (req, res) => {
+  const telegramId = resolveTelegramId(req, req.body || {});
+  if (!telegramId) {
+    return res.status(400).json({ error: "Нужен telegramId" });
+  }
+
+  try {
+    if (HAS_DATABASE) {
+      await deleteWalletLinkFromDb(telegramId);
+    } else {
+      delete memoryState.wallets[telegramId];
+    }
+    res.json({ status: "DISCONNECTED" });
+  } catch (error) {
+    res.status(500).json({ error: "Не удалось отвязать кошелек", details: error.message });
+  }
+});
+
+app.get("/api/wallet/status", async (req, res) => {
+  const telegramId = resolveTelegramId(req);
+  if (!telegramId) {
+    return res.status(400).json({ error: "Нужен telegramId" });
+  }
+
+  try {
+    const link = HAS_DATABASE ? await getWalletLinkFromDb(telegramId) : memoryState.wallets[telegramId] || null;
+    if (!link?.wallet_address) {
+      return res.json({ connected: false });
+    }
+
+    const balances = await fetchOnchainBalances(link.wallet_address);
+    res.json({
+      connected: true,
+      walletAddress: link.wallet_address,
+      network: link.network || "mainnet",
+      balances,
+      updatedAt: link.updated_at || new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Не удалось загрузить баланс кошелька", details: error.message });
+  }
 });
 
 async function startServer() {

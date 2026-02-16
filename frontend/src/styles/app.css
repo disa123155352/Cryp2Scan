@@ -106,6 +106,40 @@ body {
   font-size: 13px;
 }
 
+.wallet-connect-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.wallet-connect-title {
+  margin: 0;
+  font-size: 15px;
+  color: #e7edfa;
+  font-weight: 600;
+}
+
+.wallet-connect-address {
+  margin: 5px 0 0;
+  color: #8d96a8;
+  font-size: 11px;
+  word-break: break-all;
+}
+
+.wallet-connect-sync {
+  margin: 6px 0 0;
+  color: #95c7e2;
+  font-size: 12px;
+}
+
+.wallet-connect-btn {
+  width: auto;
+  min-width: 132px;
+  margin-top: 0;
+}
+
 .home-actions {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

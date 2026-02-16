@@ -3,8 +3,8 @@ export default function ProfilePage({ profile }) {
     <div className="page">
       <h1>Профиль</h1>
 
-      <section className="card">
-        <p><b>Telegram ID:</b> {profile?.telegramId || "неизвестно"}</p>
+      <section className="card profile-card">
+        <p><b>ID Telegram:</b> {profile?.telegramId || "неизвестно"}</p>
         <p><b>Поддержка:</b> {profile?.support || "@support"}</p>
         <p><b>Юридическая информация:</b></p>
         <ul>

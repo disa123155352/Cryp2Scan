@@ -111,7 +111,7 @@ export default function ScanPage({ telegramId, onPaid }) {
       <h1>Скан</h1>
 
       {!quote && (
-        <section className="card">
+        <section className="card scan-card">
           <p className="label">Камера</p>
           <video ref={videoRef} className="video" />
           {scanState === "scanning" && <p>Наведите камеру на QR-код</p>}
@@ -120,7 +120,7 @@ export default function ScanPage({ telegramId, onPaid }) {
       )}
 
       {quote && (
-        <section className="card">
+        <section className="card scan-result-card">
           <p><b>Магазин:</b> {quote.storeName}</p>
           <p><b>Сумма:</b> ₽ {quote.amountRub}</p>
           <p><b>USDT:</b> {quote.amountUsdt}</p>

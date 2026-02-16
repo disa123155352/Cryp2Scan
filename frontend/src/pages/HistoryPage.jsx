@@ -12,9 +12,9 @@ export default function HistoryPage({ items }) {
       {!items.length ? (
         <section className="card">Операций пока нет</section>
       ) : (
-        <div className="list">
+        <div className="list history-list">
           {items.map((item) => (
-            <section className="card" key={item.id}>
+            <section className="card history-card" key={item.id}>
               <p><b>{item.storeName}</b></p>
               <p>{new Date(item.date).toLocaleString("ru-RU")}</p>
               <p>₽ {item.amountRub}</p>

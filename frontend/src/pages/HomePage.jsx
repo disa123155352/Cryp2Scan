@@ -26,9 +26,9 @@ export default function HomePage({ homeData, telegramId, onTopUpDone }) {
     <div className="page">
       <h1>Cryp2Scan</h1>
 
-      <section className="card">
-        <p className="label">Основной баланс</p>
-        <h2>{homeData?.balance?.usdt ?? 0} USDT</h2>
+      <section className="card balance-card">
+        <p className="label">Основной кошелек</p>
+        <h2 className="balance-value">{homeData?.balance?.usdt ?? 0} USDT</h2>
 
         <div className="assets">
           <div className="asset">
@@ -40,7 +40,9 @@ export default function HomePage({ homeData, telegramId, onTopUpDone }) {
             <span>Неактивно</span>
           </div>
         </div>
+      </section>
 
+      <section className="card">
         <p className="label">Пополнение (USDT)</p>
         <input
           className="input"

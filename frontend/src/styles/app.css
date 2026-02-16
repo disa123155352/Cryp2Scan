@@ -6,12 +6,12 @@
   --text: #f4f6fb;
   --sub: #a1a8b8;
   --line: #2a2f3b;
-  --yellow: #ffd400;
-  --yellow-dark: #f0c400;
+  --yellow: #5ec8ff;
+  --yellow-dark: #41b4ee;
   --black: #101216;
   --danger: #ff5d5d;
   --success: #35d28f;
-  --nav-accent: #ffd400;
+  --nav-accent: #5ec8ff;
   --nav-muted: #8f97a8;
 }
 
@@ -22,7 +22,7 @@
 body {
   margin: 0;
   background:
-    radial-gradient(circle at 80% -10%, rgba(255, 212, 0, 0.12), transparent 38%),
+    radial-gradient(circle at 80% -10%, rgba(94, 200, 255, 0.12), transparent 38%),
     linear-gradient(180deg, var(--bg-soft) 0%, var(--bg) 100%);
   color: var(--text);
   font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -84,12 +84,17 @@ body {
 }
 
 .home-badge {
-  background: linear-gradient(135deg, #ffd400, #ffbf00);
-  color: #15171d;
+  background: linear-gradient(135deg, #5ec8ff, #3eb2f2);
+  color: #09131a;
   border-radius: 999px;
   padding: 7px 12px;
   font-size: 11px;
   font-weight: 800;
+}
+
+.home-status {
+  margin: -4px 2px 12px;
+  font-size: 13px;
 }
 
 .home-actions {
@@ -122,6 +127,42 @@ body {
 .action-btn small {
   font-size: 11px;
   color: #b2b9c8;
+}
+
+.action-btn.loading {
+  border-color: #4aa9d9;
+  background: linear-gradient(180deg, #1a2330 0%, #131a24 100%);
+}
+
+.home-mini-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.mini-card {
+  background: #151a23;
+  border: 1px solid #2a3040;
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.mini-card p {
+  margin: 0;
+  color: var(--sub);
+  font-size: 12px;
+}
+
+.mini-card h3 {
+  margin: 7px 0 2px;
+  color: #f6f8ff;
+  font-size: 22px;
+}
+
+.mini-card span {
+  color: #7e8798;
+  font-size: 12px;
 }
 
 .card {
@@ -167,7 +208,7 @@ body {
   min-width: calc(100% - 2px);
   scroll-snap-align: start;
   background:
-    radial-gradient(circle at 100% -10%, rgba(255, 212, 0, 0.22), transparent 42%),
+    radial-gradient(circle at 100% -10%, rgba(94, 200, 255, 0.22), transparent 42%),
     linear-gradient(140deg, #171a22 0%, #10131a 75%);
   border: 1px solid #343a48;
   border-radius: 18px;
@@ -419,7 +460,7 @@ body {
   height: 56px;
   border-radius: 16px;
   justify-self: center;
-  box-shadow: 0 10px 20px rgba(255, 212, 0, 0.35);
+  box-shadow: 0 10px 20px rgba(94, 200, 255, 0.35);
 }
 
 .scan-btn .nav-icon {

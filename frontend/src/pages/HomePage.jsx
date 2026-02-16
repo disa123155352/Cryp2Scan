@@ -2,8 +2,8 @@ import { useState } from "react";
 import { apiPost } from "../api/client";
 
 export default function HomePage({ homeData, telegramId, onTopUpDone }) {
-  const [amount, setAmount] = useState("100");
   const [status, setStatus] = useState({ type: "", text: "" });
+  const [isTopUpLoading, setIsTopUpLoading] = useState(false);
   const [activeBalanceCard, setActiveBalanceCard] = useState(0);
   const shortId = telegramId?.slice(-6) || "000000";
   const balances = homeData?.balance || {};
@@ -42,19 +42,18 @@ export default function HomePage({ homeData, telegramId, onTopUpDone }) {
     });
 
   const topUp = async () => {
-    const value = Number(amount);
-    if (!Number.isFinite(value) || value <= 0) {
-      setStatus({ type: "bad", text: "Введите корректную сумму" });
-      return;
-    }
+    const value = 100;
 
     try {
+      setIsTopUpLoading(true);
       setStatus({ type: "label", text: "Пополнение..." });
       await apiPost("/topup", { telegramId, amountUsdt: value });
-      setStatus({ type: "ok", text: "Баланс успешно пополнен" });
+      setStatus({ type: "ok", text: `Баланс пополнен на ${value} USDT` });
       onTopUpDone?.();
     } catch {
       setStatus({ type: "bad", text: "Ошибка пополнения" });
+    } finally {
+      setIsTopUpLoading(false);
     }
   };
 
@@ -72,9 +71,9 @@ export default function HomePage({ homeData, telegramId, onTopUpDone }) {
       </section>
 
       <section className="home-actions">
-        <button type="button" className="action-btn" onClick={topUp}>
+        <button type="button" className={`action-btn ${isTopUpLoading ? "loading" : ""}`} onClick={topUp}>
           <span>＋</span>
-          <small>Пополнить</small>
+          <small>{isTopUpLoading ? "Пополнение..." : "Пополнить"}</small>
         </button>
         <button type="button" className="action-btn">
           <span>↗</span>
@@ -84,6 +83,20 @@ export default function HomePage({ homeData, telegramId, onTopUpDone }) {
           <span>⇄</span>
           <small>Обменять</small>
         </button>
+      </section>
+      {status.text && <p className={`home-status ${status.type}`}>{status.text}</p>}
+
+      <section className="home-mini-cards">
+        <article className="mini-card">
+          <p>Все операции</p>
+          <h3>₽ 0</h3>
+          <span>Общие траты за месяц</span>
+        </article>
+        <article className="mini-card">
+          <p>Кэшбэк и бонусы</p>
+          <h3>0</h3>
+          <span>Пока начислений нет</span>
+        </article>
       </section>
 
       <section className="wallet-slider-wrap">
@@ -117,19 +130,6 @@ export default function HomePage({ homeData, telegramId, onTopUpDone }) {
             />
           ))}
         </div>
-      </section>
-
-      <section className="card">
-        <p className="label">Пополнение (USDT)</p>
-        <input
-          className="input"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          inputMode="decimal"
-          placeholder="Сумма"
-        />
-        <button className="primary-btn" type="button" onClick={topUp}>Пополнить</button>
-        {status.text && <p className={status.type}>{status.text}</p>}
       </section>
     </div>
   );

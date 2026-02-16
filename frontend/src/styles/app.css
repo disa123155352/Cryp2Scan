@@ -91,6 +91,15 @@ body {
   margin-top: 8px;
 }
 
+.input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 11px 12px;
+  margin: 8px 0 10px;
+  outline: none;
+}
+
 .list {
   display: grid;
   gap: 10px;

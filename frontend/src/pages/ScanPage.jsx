@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import QrScanner from "qr-scanner";
 import { apiPost } from "../api/client";
 
-export default function ScanPage({ onPaid }) {
+export default function ScanPage({ telegramId, onPaid }) {
   const videoRef = useRef(null);
   const scannerRef = useRef(null);
 
@@ -84,7 +84,7 @@ export default function ScanPage({ onPaid }) {
 
     try {
       const data = await apiPost("/pay", {
-        telegramId: "demo_user",
+        telegramId,
         storeName: quote.storeName,
         amountRub: quote.amountRub,
         amountUsdt: quote.amountUsdt,

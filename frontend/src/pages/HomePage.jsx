@@ -1,4 +1,27 @@
-export default function HomePage({ homeData }) {
+import { useState } from "react";
+import { apiPost } from "../api/client";
+
+export default function HomePage({ homeData, telegramId, onTopUpDone }) {
+  const [amount, setAmount] = useState("50");
+  const [status, setStatus] = useState("");
+
+  const topUp = async () => {
+    const value = Number(amount);
+    if (!Number.isFinite(value) || value <= 0) {
+      setStatus("Enter valid amount");
+      return;
+    }
+
+    try {
+      setStatus("Processing...");
+      await apiPost("/topup", { telegramId, amountUsdt: value });
+      setStatus("Top up success");
+      onTopUpDone?.();
+    } catch {
+      setStatus("Top up failed");
+    }
+  };
+
   return (
     <div className="page">
       <h1>Cryp2Scan</h1>
@@ -18,7 +41,16 @@ export default function HomePage({ homeData }) {
           </div>
         </div>
 
-        <button className="primary-btn" type="button">Top Up</button>
+        <p className="label">Top Up (USDT)</p>
+        <input
+          className="input"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          inputMode="decimal"
+          placeholder="Amount"
+        />
+        <button className="primary-btn" type="button" onClick={topUp}>Top Up</button>
+        {status && <p className={status.includes("success") ? "ok" : status.includes("failed") ? "bad" : ""}>{status}</p>}
       </section>
     </div>
   );

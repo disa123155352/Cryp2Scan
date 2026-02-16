@@ -288,6 +288,49 @@ app.post("/api/pay", async (req, res) => {
   }
 });
 
+app.post("/api/topup", async (req, res) => {
+  const telegramId = resolveTelegramId(req, req.body || {});
+  const amountUsdt = Number(req.body?.amountUsdt || 0);
+
+  if (!telegramId || !Number.isFinite(amountUsdt) || amountUsdt <= 0) {
+    return res.status(400).json({ error: "Неверные данные пополнения" });
+  }
+
+  if (!HAS_DATABASE) {
+    memoryState.balance.usdt = +(memoryState.balance.usdt + amountUsdt).toFixed(2);
+    return res.json({
+      status: "SUCCESS",
+      newBalanceUsdt: memoryState.balance.usdt
+    });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const userId = await ensureUserAndBalance(client, telegramId);
+    const balanceResult = await client.query(
+      `
+        UPDATE balances
+        SET usdt = usdt + $1, updated_at = NOW()
+        WHERE user_id = $2
+        RETURNING usdt
+      `,
+      [amountUsdt, userId]
+    );
+    await client.query("COMMIT");
+
+    res.json({
+      status: "SUCCESS",
+      newBalanceUsdt: toNumber(balanceResult.rows[0]?.usdt)
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    res.status(500).json({ error: "Top up error", details: error.message });
+  } finally {
+    client.release();
+  }
+});
+
 app.get("/api/history", async (req, res) => {
   try {
     const telegramId = resolveTelegramId(req);
@@ -299,7 +342,7 @@ app.get("/api/history", async (req, res) => {
 });
 
 app.get("/api/profile", (req, res) => {
-  const telegramId = req.query.telegramId || "unknown";
+  const telegramId = resolveTelegramId(req);
   res.json({
     telegramId,
     support: "@cryp2scan_support",

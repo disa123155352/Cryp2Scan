@@ -9,10 +9,35 @@ import ProfilePage from "./pages/ProfilePage";
 import TopUpPage from "./pages/TopUpPage";
 import SettingsPage from "./pages/SettingsPage";
 
+function getTelegramUserIdFromInitData(initDataRaw = "") {
+  try {
+    const params = new URLSearchParams(initDataRaw);
+    const userRaw = params.get("user");
+    if (!userRaw) return "";
+    const user = JSON.parse(userRaw);
+    return user?.id ? String(user.id) : "";
+  } catch {
+    return "";
+  }
+}
+
+function getTelegramUserIdFallbackFromUrl() {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tgWebAppData = urlParams.get("tgWebAppData");
+    if (!tgWebAppData) return "";
+    const decoded = decodeURIComponent(tgWebAppData);
+    return getTelegramUserIdFromInitData(decoded);
+  } catch {
+    return "";
+  }
+}
+
 export default function App() {
   const [tab, setTab] = useState("home");
   const [screen, setScreen] = useState("tabs");
-  const [telegramId, setTelegramId] = useState("demo_user");
+  const [telegramId, setTelegramId] = useState("");
+  const [telegramReady, setTelegramReady] = useState(false);
   const [homeData, setHomeData] = useState(null);
   const [history, setHistory] = useState([]);
   const [profile, setProfile] = useState(null);
@@ -32,8 +57,15 @@ export default function App() {
 
   useEffect(() => {
     const webApp = window.Telegram?.WebApp;
-    const id = webApp?.initDataUnsafe?.user?.id;
-    if (id) setTelegramId(String(id));
+    const idFromUnsafe = webApp?.initDataUnsafe?.user?.id ? String(webApp.initDataUnsafe.user.id) : "";
+    const idFromInitData = getTelegramUserIdFromInitData(webApp?.initData || "");
+    const idFromUrl = getTelegramUserIdFallbackFromUrl();
+    const resolvedId = idFromUnsafe || idFromInitData || idFromUrl;
+
+    if (resolvedId) {
+      setTelegramId(resolvedId);
+    }
+    setTelegramReady(true);
     webApp?.ready?.();
     webApp?.expand?.();
 
@@ -50,11 +82,22 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!telegramId) return;
     loadAll().catch(console.error);
   }, [telegramId]);
 
   let content = null;
-  if (screen === "topup") {
+  if (!telegramId) {
+    content = (
+      <div className="page">
+        <section className="card">
+          {telegramReady
+            ? "Не удалось определить Telegram ID. Откройте мини-приложение через бота в Telegram."
+            : "Загружаем данные Telegram..."}
+        </section>
+      </div>
+    );
+  } else if (screen === "topup") {
     content = (
       <TopUpPage
         telegramId={telegramId}
@@ -88,7 +131,7 @@ export default function App() {
   return (
     <div className="app">
       <main className="content">{content}</main>
-      {screen === "tabs" && <BottomNav tab={tab} setTab={setTab} />}
+      {telegramId && screen === "tabs" && <BottomNav tab={tab} setTab={setTab} />}
     </div>
   );
 }

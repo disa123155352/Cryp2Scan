@@ -14,7 +14,6 @@ app.use(express.json());
 
 const RATE_RUB_PER_USDT = 100;
 const FEE_PERCENT = 0.01;
-const DEFAULT_TELEGRAM_ID = "demo_user";
 
 const memoryState = {
   balance: { usdt: 1250.5, ton: 0, btc: 0 },
@@ -27,7 +26,7 @@ function toNumber(value) {
 }
 
 function resolveTelegramId(req, body = {}) {
-  return body.telegramId || req.query.telegramId || DEFAULT_TELEGRAM_ID;
+  return body.telegramId || req.query.telegramId || null;
 }
 
 async function ensureUserAndBalance(client, telegramId) {
@@ -242,6 +241,9 @@ app.get("/api/health", (req, res) => {
 app.get("/api/home", async (req, res) => {
   try {
     const telegramId = resolveTelegramId(req);
+    if (!telegramId) {
+      return res.status(400).json({ error: "telegramId is required" });
+    }
     const balance = HAS_DATABASE ? await getHomeFromDb(telegramId) : memoryState.balance;
 
     res.json({
@@ -448,6 +450,9 @@ app.post("/api/topup", async (req, res) => {
 app.get("/api/history", async (req, res) => {
   try {
     const telegramId = resolveTelegramId(req);
+    if (!telegramId) {
+      return res.status(400).json({ error: "telegramId is required" });
+    }
     const items = HAS_DATABASE ? await getHistoryFromDb(telegramId) : memoryState.history;
     res.json({ items });
   } catch (error) {
@@ -457,6 +462,9 @@ app.get("/api/history", async (req, res) => {
 
 app.get("/api/profile", (req, res) => {
   const telegramId = resolveTelegramId(req);
+  if (!telegramId) {
+    return res.status(400).json({ error: "telegramId is required" });
+  }
   res.json({
     telegramId,
     support: "@cryp2scan_support",

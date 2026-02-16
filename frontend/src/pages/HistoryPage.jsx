@@ -1,19 +1,25 @@
 export default function HistoryPage({ items }) {
+  const toStatus = (status) => {
+    if (status === "SUCCESS") return "Успешно";
+    if (status === "FAILED") return "Ошибка";
+    return status;
+  };
+
   return (
     <div className="page">
-      <h1>History</h1>
+      <h1>История</h1>
 
       {!items.length ? (
-        <section className="card">No operations yet</section>
+        <section className="card">Операций пока нет</section>
       ) : (
         <div className="list">
           {items.map((item) => (
             <section className="card" key={item.id}>
               <p><b>{item.storeName}</b></p>
-              <p>{new Date(item.date).toLocaleString()}</p>
-              <p>RUB {item.amountRub}</p>
+              <p>{new Date(item.date).toLocaleString("ru-RU")}</p>
+              <p>₽ {item.amountRub}</p>
               <p>{item.amountUsdt} USDT</p>
-              <p className={item.status === "SUCCESS" ? "ok" : "bad"}>{item.status}</p>
+              <p className={item.status === "SUCCESS" ? "ok" : "bad"}>{toStatus(item.status)}</p>
             </section>
           ))}
         </div>

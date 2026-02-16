@@ -37,7 +37,7 @@ export default function ScanPage({ telegramId, onPaid }) {
             const parts = Object.fromEntries(raw.split(";").map((p) => p.split("=")));
 
             if (!parts.store || !parts.amount) {
-              setScanError("Wrong QR format");
+              setScanError("Неверный формат QR");
               return;
             }
 
@@ -50,7 +50,7 @@ export default function ScanPage({ telegramId, onPaid }) {
               setScanState("scanned");
               scanner.stop();
             } catch {
-              setScanError("Quote error");
+              setScanError("Ошибка расчета");
             }
           },
           {
@@ -66,7 +66,7 @@ export default function ScanPage({ telegramId, onPaid }) {
         await scanner.setInversionMode("both");
       } catch {
         setScanState("failed");
-        setScanError("No camera access. Allow camera in browser.");
+        setScanError("Нет доступа к камере. Разреши доступ в браузере.");
       }
     }
 
@@ -108,33 +108,33 @@ export default function ScanPage({ telegramId, onPaid }) {
 
   return (
     <div className="page">
-      <h1>Scan</h1>
+      <h1>Скан</h1>
 
       {!quote && (
         <section className="card">
-          <p className="label">Camera</p>
+          <p className="label">Камера</p>
           <video ref={videoRef} className="video" />
-          {scanState === "scanning" && <p>Point camera to QR code</p>}
+          {scanState === "scanning" && <p>Наведите камеру на QR-код</p>}
           {scanError && <p className="bad">{scanError}</p>}
         </section>
       )}
 
       {quote && (
         <section className="card">
-          <p><b>Store:</b> {quote.storeName}</p>
-          <p><b>Amount:</b> RUB {quote.amountRub}</p>
+          <p><b>Магазин:</b> {quote.storeName}</p>
+          <p><b>Сумма:</b> ₽ {quote.amountRub}</p>
           <p><b>USDT:</b> {quote.amountUsdt}</p>
-          <p><b>Rate:</b> {quote.rate}</p>
-          <p><b>Fee:</b> {quote.feeUsdt} USDT</p>
+          <p><b>Курс:</b> {quote.rate}</p>
+          <p><b>Комиссия:</b> {quote.feeUsdt} USDT</p>
 
-          <button className="primary-btn" type="button" onClick={pay}>Pay</button>
-          <button className="secondary-btn" type="button" onClick={scanAgain}>Scan Again</button>
+          <button className="primary-btn" type="button" onClick={pay}>Оплатить</button>
+          <button className="secondary-btn" type="button" onClick={scanAgain}>Сканировать снова</button>
         </section>
       )}
 
-      {scanState === "processing" && <section className="card">Processing...</section>}
-      {scanState === "success" && <section className="card ok">Success</section>}
-      {scanState === "failed" && <section className="card bad">Failed</section>}
+      {scanState === "processing" && <section className="card">Обработка...</section>}
+      {scanState === "success" && <section className="card ok">Успешно</section>}
+      {scanState === "failed" && <section className="card bad">Ошибка</section>}
     </div>
   );
 }

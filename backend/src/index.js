@@ -347,8 +347,8 @@ app.get("/api/profile", (req, res) => {
     telegramId,
     support: "@cryp2scan_support",
     legal: [
-      { title: "Terms", url: "https://example.com/terms" },
-      { title: "Privacy", url: "https://example.com/privacy" }
+      { title: "Пользовательское соглашение", url: "https://example.com/terms" },
+      { title: "Политика конфиденциальности", url: "https://example.com/privacy" }
     ]
   });
 });

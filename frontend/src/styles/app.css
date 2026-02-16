@@ -128,32 +128,54 @@ body {
   border-top: 1px solid var(--line);
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
+  padding: 8px 4px calc(10px + env(safe-area-inset-bottom));
+  min-height: 84px;
 }
 
 .bottom-nav button {
   border: none;
   background: transparent;
   color: var(--sub);
-  display: grid;
-  justify-items: center;
-  gap: 4px;
-  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 11px;
   cursor: pointer;
+  white-space: nowrap;
+  min-height: 60px;
 }
 
 .bottom-nav button.active {
   color: var(--green);
 }
 
+.nav-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.nav-label {
+  font-size: 11px;
+  line-height: 1.1;
+}
+
 .scan-btn {
-  margin-top: -24px;
+  margin-top: 0;
   background: var(--green) !important;
   color: #fff !important;
-  width: 64px;
-  height: 64px;
-  border-radius: 999px;
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
   justify-self: center;
-  align-content: center;
-  box-shadow: 0 10px 22px rgba(22, 163, 74, 0.28);
+  box-shadow: 0 8px 18px rgba(22, 163, 74, 0.25);
+}
+
+.scan-btn .nav-icon {
+  font-size: 24px;
+}
+
+.scan-btn .nav-label {
+  font-size: 10px;
 }

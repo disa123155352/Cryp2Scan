@@ -49,9 +49,11 @@ async function fetchBalancesWithRetry(address, retries = 2) {
 
 export default function HomePage({
   homeData,
+  historyItems = [],
   telegramId,
   onOpenTopUp,
   onOpenSettings,
+  onOpenPitch,
   onRunDemo,
   onResetDemo,
   onOpenHistory
@@ -121,6 +123,41 @@ export default function HomePage({
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
+
+  const formatRub = (value) =>
+    Number(value || 0).toLocaleString("ru-RU", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    });
+
+  const monthStats = useMemo(() => {
+    const now = new Date();
+    const month = now.getMonth();
+    const year = now.getFullYear();
+
+    let totalRub = 0;
+    let totalCount = 0;
+
+    historyItems.forEach((item) => {
+      const date = new Date(item?.date);
+      const rub = Number(item?.amountRub || 0);
+      const status = String(item?.status || "");
+      const method = String(item?.paymentMethod || "");
+      if (
+        Number.isFinite(date.getTime()) &&
+        date.getMonth() === month &&
+        date.getFullYear() === year &&
+        status === "SUCCESS" &&
+        rub > 0 &&
+        method !== "topup"
+      ) {
+        totalRub += rub;
+        totalCount += 1;
+      }
+    });
+
+    return { totalRub, totalCount };
+  }, [historyItems]);
 
   const demoScenarios = [
     {
@@ -383,11 +420,11 @@ export default function HomePage({
       {isWalletConnected && walletStatus.loading && <p className="home-status">Обновляем баланс...</p>}
 
       <section className="home-mini-cards">
-        <article className="mini-card">
+        <button type="button" className="mini-card mini-card-button" onClick={onOpenHistory}>
           <p>Все операции</p>
-          <h3>₽ 0</h3>
-          <span>Общие траты за месяц</span>
-        </article>
+          <h3>₽ {formatRub(monthStats.totalRub)}</h3>
+          <span>{monthStats.totalCount} операций за месяц</span>
+        </button>
         <article className="mini-card">
           <p>Кэшбэк и бонусы</p>
           <h3>0</h3>
@@ -455,6 +492,14 @@ export default function HomePage({
             disabled={resetLoading || investorLoading}
           >
             {resetLoading ? "Сбрасываем..." : "Сбросить demo"}
+          </button>
+          <button
+            type="button"
+            className="primary-btn demo-pitch-btn"
+            onClick={onOpenPitch}
+            disabled={investorLoading || resetLoading}
+          >
+            Открыть презентацию
           </button>
         </div>
         {resetInfo && <p className="home-status">{resetInfo}</p>}

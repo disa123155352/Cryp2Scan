@@ -9,6 +9,7 @@ import ProfilePage from "./pages/ProfilePage";
 import TopUpPage from "./pages/TopUpPage";
 import SettingsPage from "./pages/SettingsPage";
 import AdminPage from "./pages/AdminPage";
+import InvestorPitchPage from "./pages/InvestorPitchPage";
 
 function getTelegramUserIdFromInitData(initDataRaw = "") {
   try {
@@ -190,6 +191,8 @@ export default function App() {
     );
   } else if (screen === "settings") {
     content = <SettingsPage telegramId={telegramId} onBack={() => setScreen("tabs")} />;
+  } else if (screen === "pitch") {
+    content = <InvestorPitchPage historyItems={history} onBack={() => setScreen("tabs")} />;
   } else if (screen === "admin") {
     content = isAdmin ? (
       <AdminPage telegramId={telegramId} onBack={() => setScreen("tabs")} />
@@ -203,9 +206,11 @@ export default function App() {
       content = (
         <HomePage
           homeData={homeData}
+          historyItems={history}
           telegramId={telegramId}
           onOpenTopUp={() => setScreen("topup")}
           onOpenSettings={() => setScreen("settings")}
+          onOpenPitch={() => setScreen("pitch")}
           onRunDemo={runDemoPayment}
           onResetDemo={resetDemoPayment}
           onOpenHistory={() => setTab("history")}

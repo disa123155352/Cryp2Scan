@@ -499,6 +499,23 @@ body {
   box-shadow: var(--shadow-soft);
 }
 
+.mini-card-button {
+  width: 100%;
+  text-align: left;
+  border: 1px solid #3b5f84;
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.mini-card-button:active {
+  transform: scale(0.98);
+}
+
+.mini-card-button:hover {
+  border-color: #5ea4db;
+  box-shadow: 0 0 0 1px rgba(94, 200, 255, 0.14), var(--shadow-soft);
+}
+
 .mini-card p {
   margin: 0;
   color: var(--sub);
@@ -515,6 +532,10 @@ body {
 .mini-card span {
   color: #7e8798;
   font-size: 12px;
+}
+
+.demo-pitch-btn {
+  margin-top: 0;
 }
 
 .card {
@@ -567,6 +588,73 @@ body {
   border-radius: 20px;
   padding: 18px;
   box-shadow: 0 16px 32px rgba(6, 10, 18, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.pitch-page h1 {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.pitch-hero h2 {
+  margin: 0 0 8px;
+  font-size: 28px;
+  line-height: 1.18;
+  letter-spacing: -0.5px;
+}
+
+.pitch-hero p {
+  margin: 0;
+  color: #d3dcf0;
+  line-height: 1.45;
+}
+
+.pitch-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.pitch-item {
+  margin-bottom: 0;
+  min-height: 128px;
+}
+
+.pitch-item p {
+  margin: 0;
+  color: #ced7ea;
+  line-height: 1.4;
+}
+
+.pitch-metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.pitch-metrics-grid article {
+  border: 1px solid #2f3748;
+  border-radius: 12px;
+  background: #111723;
+  padding: 10px;
+}
+
+.pitch-metrics-grid span {
+  display: block;
+  color: var(--sub);
+  font-size: 12px;
+}
+
+.pitch-metrics-grid b {
+  display: block;
+  margin-top: 4px;
+  font-size: 19px;
+  color: #ecf6ff;
+}
+
+.pitch-ask p {
+  margin-top: 0;
+  color: #d2dbef;
+  line-height: 1.45;
 }
 
 .wallet-row {

@@ -184,6 +184,12 @@ body {
   font-size: 13px;
 }
 
+.demo-card-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
 .demo-run-btn {
   margin-top: 0;
 }
@@ -191,6 +197,135 @@ body {
 .demo-run-btn:disabled {
   opacity: 0.66;
   cursor: not-allowed;
+}
+
+.demo-reset-btn {
+  margin-top: 0;
+}
+
+.investor-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 7, 11, 0.72);
+  backdrop-filter: blur(8px);
+  z-index: 80;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+}
+
+.investor-modal {
+  width: min(460px, 100%);
+  max-height: calc(100vh - 28px);
+  overflow-y: auto;
+}
+
+.investor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.investor-title {
+  margin: 6px 0 12px;
+  font-size: 21px;
+  line-height: 1.2;
+}
+
+.investor-progress {
+  height: 8px;
+  background: #1f2634;
+  border: 1px solid #30384a;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.investor-progress div {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #6ad7ff 0%, #5ec8ff 100%);
+  transition: width 260ms ease;
+}
+
+.investor-steps {
+  display: grid;
+  gap: 8px;
+}
+
+.investor-step {
+  border: 1px solid #2f3748;
+  border-radius: 12px;
+  background: #121722;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.investor-step span {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid #394458;
+  color: #9eb0ca;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.investor-step p {
+  margin: 0;
+  font-size: 14px;
+  color: #d4deef;
+}
+
+.investor-step.active {
+  border-color: #57b7e2;
+  box-shadow: 0 0 0 1px rgba(94, 200, 255, 0.13);
+}
+
+.investor-step.active span {
+  border-color: #57b7e2;
+  color: #dff5ff;
+  background: rgba(94, 200, 255, 0.16);
+}
+
+.investor-summary {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.investor-summary article {
+  border: 1px solid #2f3748;
+  border-radius: 12px;
+  background: #121722;
+  padding: 10px;
+}
+
+.investor-summary span {
+  display: block;
+  color: var(--sub);
+  font-size: 12px;
+}
+
+.investor-summary b {
+  display: block;
+  margin-top: 4px;
+  color: #e8f4ff;
+  font-size: 16px;
+}
+
+.investor-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .action-btn {

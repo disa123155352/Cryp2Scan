@@ -47,14 +47,25 @@ async function fetchBalancesWithRetry(address, retries = 2) {
   throw lastError || new Error("balance_unavailable");
 }
 
-export default function HomePage({ homeData, telegramId, onOpenTopUp, onOpenSettings, onRunDemo }) {
+export default function HomePage({
+  homeData,
+  telegramId,
+  onOpenTopUp,
+  onOpenSettings,
+  onRunDemo,
+  onResetDemo,
+  onOpenHistory
+}) {
   const [activeBalanceCard, setActiveBalanceCard] = useState(0);
   const [walletStatus, setWalletStatus] = useState({ connected: false, balances: { usdt: 0, ton: 0 }, loading: true });
   const [walletHint, setWalletHint] = useState("");
-  const [demoLoading, setDemoLoading] = useState(false);
-  const [demoStageText, setDemoStageText] = useState("");
-  const [demoResult, setDemoResult] = useState(null);
-  const [demoError, setDemoError] = useState("");
+  const [investorOpen, setInvestorOpen] = useState(false);
+  const [investorLoading, setInvestorLoading] = useState(false);
+  const [investorStep, setInvestorStep] = useState(-1);
+  const [investorError, setInvestorError] = useState("");
+  const [investorResult, setInvestorResult] = useState(null);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetInfo, setResetInfo] = useState("");
   const tonWallet = useTonWallet();
   const isWalletConnectedInSdk = Boolean(tonWallet?.account?.address);
   const isWalletConnected = walletStatus.connected || isWalletConnectedInSdk;
@@ -102,45 +113,78 @@ export default function HomePage({ homeData, telegramId, onOpenTopUp, onOpenSett
       maximumFractionDigits: 2
     });
 
-  const runDemo = async () => {
-    if (demoLoading) return;
-    setDemoLoading(true);
-    setDemoError("");
-    setDemoResult(null);
+  const investorSteps = [
+    { key: "scan", title: "Сканируем QR покупки" },
+    { key: "crypto", title: "Списываем криптовалюту клиента" },
+    { key: "convert", title: "Конвертируем в рубли" },
+    { key: "payout", title: "Переводим рубли магазину по СБП" }
+  ];
 
-    const stageTexts = [
-      "1/3 Считываем QR заказа...",
-      "2/3 Списываем крипту клиента...",
-      "3/3 Конвертируем и отправляем ₽ магазину..."
-    ];
-    let stageIndex = 0;
-    setDemoStageText(stageTexts[stageIndex]);
+  const investorProgress = investorStep < 0
+    ? 0
+    : Math.min(((investorStep + 1) / investorSteps.length) * 100, 100);
 
-    const timer = setInterval(() => {
-      stageIndex += 1;
-      if (stageIndex < stageTexts.length) {
-        setDemoStageText(stageTexts[stageIndex]);
-      }
-    }, 550);
+  const runInvestorDemo = async () => {
+    if (investorLoading) return;
+    setInvestorOpen(true);
+    setInvestorLoading(true);
+    setInvestorError("");
+    setInvestorResult(null);
+    setResetInfo("");
+    const startedAt = Date.now();
 
     try {
+      setInvestorStep(0);
+      await sleep(450);
+
+      setInvestorStep(1);
+      await sleep(500);
+
+      setInvestorStep(2);
       const data = await onRunDemo?.();
       if (!data?.ok) {
-        setDemoError(data?.message || "Не удалось запустить demo");
+        setInvestorError(data?.message || "Не удалось запустить demo");
+        return;
+      }
+
+      const quote = data?.result?.quote || {};
+      setInvestorStep(3);
+      await sleep(420);
+
+      setInvestorResult({
+        storeName: quote.storeName || "Магазин",
+        amountRub: Number(quote.amountRub || 0),
+        amountUsdt: Number(quote.amountUsdt || 0),
+        totalUsdt: Number(quote.totalUsdt || quote.amountUsdt || 0),
+        feeUsdt: Number(quote.feeUsdt || 0),
+        durationSec: ((Date.now() - startedAt) / 1000).toFixed(1)
+      });
+    } catch {
+      setInvestorError("Ошибка запуска demo");
+    } finally {
+      setInvestorLoading(false);
+    }
+  };
+
+  const resetInvestorDemo = async () => {
+    if (resetLoading || investorLoading) return;
+    setResetLoading(true);
+    setResetInfo("");
+    setInvestorError("");
+    try {
+      const data = await onResetDemo?.();
+      if (!data?.ok) {
+        setResetInfo(data?.message || "Не удалось сбросить demo");
       } else {
-        const quote = data?.result?.quote || {};
-        setDemoResult({
-          storeName: quote.storeName || "Магазин",
-          amountRub: Number(quote.amountRub || 0),
-          amountUsdt: Number(quote.totalUsdt || quote.amountUsdt || 0)
-        });
+        const deleted = Number(data?.result?.deleted || 0);
+        setResetInfo(`Demo очищен. Удалено операций: ${deleted}`);
+        setInvestorResult(null);
+        setInvestorStep(-1);
       }
     } catch {
-      setDemoError("Не удалось запустить demo");
+      setResetInfo("Не удалось сбросить demo");
     } finally {
-      clearInterval(timer);
-      setDemoLoading(false);
-      setDemoStageText("");
+      setResetLoading(false);
     }
   };
 
@@ -258,24 +302,105 @@ export default function HomePage({ homeData, telegramId, onOpenTopUp, onOpenSett
       </section>
 
       <section className="card demo-card">
-        <p className="label">Demo-режим</p>
-        <p className="demo-card-sub">Один клик: создаем заказ, оплачиваем и записываем в историю</p>
-        <button
-          type="button"
-          className="secondary-btn demo-run-btn"
-          onClick={runDemo}
-          disabled={demoLoading}
-        >
-          {demoLoading ? "Идет demo-оплата..." : "Запустить demo-оплату"}
-        </button>
-        {demoLoading && demoStageText && <p className="home-status">{demoStageText}</p>}
-        {demoError && <p className="bad">{demoError}</p>}
-        {demoResult && (
-          <p className="ok">
-            Demo готово: {demoResult.storeName}, ₽ {formatNumber(demoResult.amountRub)} ({formatNumber(demoResult.amountUsdt)} USDT)
-          </p>
-        )}
+        <p className="label">Investor Demo</p>
+        <p className="demo-card-sub">Сценарий для презентации: клиент платит криптой, магазин получает рубли</p>
+        <div className="demo-card-actions">
+          <button
+            type="button"
+            className="secondary-btn demo-run-btn"
+            onClick={runInvestorDemo}
+            disabled={investorLoading}
+          >
+            {investorLoading ? "Идет Investor Demo..." : "Запустить Investor Demo"}
+          </button>
+          <button
+            type="button"
+            className="secondary-btn demo-reset-btn"
+            onClick={resetInvestorDemo}
+            disabled={resetLoading || investorLoading}
+          >
+            {resetLoading ? "Сбрасываем..." : "Сбросить demo"}
+          </button>
+        </div>
+        {resetInfo && <p className="home-status">{resetInfo}</p>}
       </section>
+
+      {investorOpen && (
+        <section className="investor-overlay">
+          <div className="card investor-modal">
+            <div className="investor-head">
+              <p className="label">Investor Demo</p>
+              <button
+                type="button"
+                className="topup-back"
+                onClick={() => setInvestorOpen(false)}
+                disabled={investorLoading}
+              >
+                Закрыть
+              </button>
+            </div>
+
+            <h3 className="investor-title">Клиент платит криптой, магазин получает рубли</h3>
+
+            <div className="investor-progress">
+              <div style={{ width: `${investorProgress}%` }} />
+            </div>
+
+            <div className="investor-steps">
+              {investorSteps.map((step, index) => (
+                <article
+                  className={`investor-step ${index <= investorStep ? "active" : ""}`}
+                  key={step.key}
+                >
+                  <span>{index + 1}</span>
+                  <p>{step.title}</p>
+                </article>
+              ))}
+            </div>
+
+            {investorLoading && <p className="home-status">Выполняем демонстрационный платеж...</p>}
+            {investorError && <p className="bad">{investorError}</p>}
+
+            {investorResult && (
+              <section className="investor-summary">
+                <article>
+                  <span>Сумма покупки</span>
+                  <b>₽ {formatNumber(investorResult.amountRub)}</b>
+                </article>
+                <article>
+                  <span>Списано у клиента</span>
+                  <b>{formatNumber(investorResult.totalUsdt)} USDT</b>
+                </article>
+                <article>
+                  <span>Комиссия сервиса</span>
+                  <b>{formatNumber(investorResult.feeUsdt)} USDT</b>
+                </article>
+                <article>
+                  <span>Время сделки</span>
+                  <b>{investorResult.durationSec} сек</b>
+                </article>
+              </section>
+            )}
+
+            <div className="investor-actions">
+              <button type="button" className="primary-btn" onClick={runInvestorDemo} disabled={investorLoading}>
+                Запустить снова
+              </button>
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={() => {
+                  setInvestorOpen(false);
+                  onOpenHistory?.();
+                }}
+                disabled={investorLoading}
+              >
+                Открыть историю
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="wallet-slider-wrap">
         <p className="label">Кошелек</p>

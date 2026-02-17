@@ -814,7 +814,7 @@ app.post("/api/demo/run", async (req, res) => {
   const telegramId = resolveTelegramId(req, req.body || {});
   const storeName = String(req.body?.storeName || "Пятёрочка").trim();
   const merchantId = String(req.body?.merchantId || "m_demo_001").trim();
-  const orderId = String(req.body?.orderId || buildOrderId()).trim();
+  const orderId = String(req.body?.orderId || `demo_${Date.now()}`).trim();
   const amountRubInput = Number(req.body?.amountRub || 799);
 
   if (!telegramId || !storeName || !merchantId || !orderId || !Number.isFinite(amountRubInput) || amountRubInput <= 0) {
@@ -988,6 +988,48 @@ app.post("/api/demo/run", async (req, res) => {
   } catch (error) {
     await client.query("ROLLBACK");
     return res.status(500).json({ error: "Demo payment error", details: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+app.post("/api/demo/reset", async (req, res) => {
+  const telegramId = resolveTelegramId(req, req.body || {});
+  if (!telegramId) {
+    return res.status(400).json({ error: "telegramId is required" });
+  }
+
+  if (!HAS_DATABASE) {
+    const before = memoryState.history.length;
+    memoryState.history = memoryState.history.filter((item) => {
+      const isUser = String(item?.customerTelegramId || "") === String(telegramId);
+      const isDemo = String(item?.storeName || "").includes("(DEMO)") || String(item?.orderId || "").startsWith("demo_");
+      return !(isUser && isDemo);
+    });
+    const deleted = before - memoryState.history.length;
+    return res.json({ status: "SUCCESS", deleted });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const userId = await ensureUserAndBalance(client, telegramId);
+    const deleted = await client.query(
+      `
+        DELETE FROM transactions
+        WHERE user_id = $1
+          AND (
+            store_name LIKE '%(DEMO)%'
+            OR order_id LIKE 'demo_%'
+          )
+      `,
+      [userId]
+    );
+    await client.query("COMMIT");
+    return res.json({ status: "SUCCESS", deleted: deleted.rowCount || 0 });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    return res.status(500).json({ error: "Demo reset error", details: error.message });
   } finally {
     client.release();
   }

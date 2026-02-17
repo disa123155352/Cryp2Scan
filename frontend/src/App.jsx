@@ -88,6 +88,20 @@ export default function App() {
     }
   };
 
+  const resetDemoPayment = async () => {
+    if (!telegramId) {
+      return { ok: false, message: "Telegram ID не найден" };
+    }
+
+    try {
+      const result = await apiPost("/demo/reset", { telegramId });
+      await loadAll();
+      return { ok: true, result };
+    } catch (error) {
+      return { ok: false, message: error?.message || "Не удалось сбросить demo" };
+    }
+  };
+
   useEffect(() => {
     let attempts = 0;
     let stopped = false;
@@ -193,6 +207,8 @@ export default function App() {
           onOpenTopUp={() => setScreen("topup")}
           onOpenSettings={() => setScreen("settings")}
           onRunDemo={runDemoPayment}
+          onResetDemo={resetDemoPayment}
+          onOpenHistory={() => setTab("history")}
         />
       );
     }

@@ -46,6 +46,7 @@ export default function App() {
   const [screen, setScreen] = useState("tabs");
   const [telegramId, setTelegramId] = useState("");
   const [telegramReady, setTelegramReady] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [homeData, setHomeData] = useState(null);
   const [history, setHistory] = useState([]);
   const [profile, setProfile] = useState(null);
@@ -61,6 +62,16 @@ export default function App() {
     setHomeData(home);
     setHistory(historyData.items || []);
     setProfile(profileData);
+  };
+
+  const loadAdminAccess = async () => {
+    const query = `?telegramId=${encodeURIComponent(telegramId)}`;
+    try {
+      const access = await apiGet(`/admin/access${query}`);
+      setIsAdmin(Boolean(access?.allowed));
+    } catch {
+      setIsAdmin(false);
+    }
   };
 
   useEffect(() => {
@@ -123,6 +134,7 @@ export default function App() {
   useEffect(() => {
     if (!telegramId) return;
     loadAll().catch(console.error);
+    loadAdminAccess().catch(console.error);
   }, [telegramId]);
 
   let content = null;
@@ -151,7 +163,13 @@ export default function App() {
   } else if (screen === "settings") {
     content = <SettingsPage telegramId={telegramId} onBack={() => setScreen("tabs")} />;
   } else if (screen === "admin") {
-    content = <AdminPage telegramId={telegramId} onBack={() => setScreen("tabs")} />;
+    content = isAdmin ? (
+      <AdminPage telegramId={telegramId} onBack={() => setScreen("tabs")} />
+    ) : (
+      <div className="page">
+        <section className="card bad">Нет доступа к админке</section>
+      </div>
+    );
   } else {
     if (tab === "home") {
       content = (
@@ -168,8 +186,11 @@ export default function App() {
     if (tab === "services") {
       content = (
         <ServicesPage
+          isAdmin={isAdmin}
           onOpenSettings={() => setScreen("settings")}
-          onOpenAdmin={() => setScreen("admin")}
+          onOpenAdmin={() => {
+            if (isAdmin) setScreen("admin");
+          }}
         />
       );
     }

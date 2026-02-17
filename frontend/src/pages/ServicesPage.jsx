@@ -1,4 +1,4 @@
-export default function ServicesPage({ onOpenSettings, onOpenAdmin }) {
+export default function ServicesPage({ isAdmin, onOpenSettings, onOpenAdmin }) {
   return (
     <div className="page">
       <section className="card services-card">
@@ -7,9 +7,11 @@ export default function ServicesPage({ onOpenSettings, onOpenAdmin }) {
         <button type="button" className="primary-btn services-btn" onClick={onOpenSettings}>
           Настройки
         </button>
-        <button type="button" className="secondary-btn services-btn" onClick={onOpenAdmin}>
-          Админка
-        </button>
+        {isAdmin && (
+          <button type="button" className="secondary-btn services-btn" onClick={onOpenAdmin}>
+            Админка
+          </button>
+        )}
       </section>
     </div>
   );

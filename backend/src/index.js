@@ -40,7 +40,7 @@ function resolveTelegramId(req, body = {}) {
 
 function canAccessAdmin(telegramId) {
   if (!telegramId) return false;
-  if (!ADMIN_TELEGRAM_IDS.length) return true;
+  if (!ADMIN_TELEGRAM_IDS.length) return false;
   return ADMIN_TELEGRAM_IDS.includes(String(telegramId));
 }
 
@@ -878,6 +878,15 @@ app.get("/api/history", async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: "Cannot load history", details: error.message });
   }
+});
+
+app.get("/api/admin/access", (req, res) => {
+  const telegramId = resolveTelegramId(req);
+  if (!telegramId) {
+    return res.status(400).json({ error: "telegramId is required" });
+  }
+
+  return res.json({ allowed: canAccessAdmin(telegramId) });
 });
 
 app.get("/api/admin/summary", async (req, res) => {

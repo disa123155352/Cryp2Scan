@@ -189,6 +189,10 @@ body {
   overflow-x: auto;
   gap: 0;
   scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
   margin-bottom: 10px;
   border-radius: 14px;
 }
@@ -200,6 +204,7 @@ body {
 .demo-scenario-card {
   flex: 0 0 100%;
   scroll-snap-align: start;
+  scroll-snap-stop: always;
   border: 1px solid #2f3748;
   border-radius: 14px;
   background: linear-gradient(180deg, #141a26 0%, #101621 100%);

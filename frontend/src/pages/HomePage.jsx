@@ -74,6 +74,7 @@ export default function HomePage({
   const onchainBalances = walletStatus?.balances || {};
   const previousTonAddress = useRef("");
   const demoSliderRef = useRef(null);
+  const demoScrollRafRef = useRef(0);
 
   const balances = useMemo(() => ({
     usdt: (walletStatus.connected || isWalletConnectedInSdk) ? Number(onchainBalances.usdt || 0) : 0,
@@ -171,20 +172,43 @@ export default function HomePage({
 
   const onScenarioScroll = (event) => {
     const container = event.currentTarget;
+    if (demoScrollRafRef.current) return;
+
+    const scrollLeft = container.scrollLeft;
     const cardWidth = container.clientWidth;
     if (!cardWidth) return;
-    const index = Math.round(container.scrollLeft / cardWidth);
-    const next = demoScenarios[index];
-    if (next && next.key !== selectedScenarioKey) {
-      setSelectedScenarioKey(next.key);
-    }
+
+    demoScrollRafRef.current = requestAnimationFrame(() => {
+      demoScrollRafRef.current = 0;
+      const index = Math.round(scrollLeft / cardWidth);
+      const safeIndex = Math.min(Math.max(index, 0), demoScenarios.length - 1);
+      const next = demoScenarios[safeIndex];
+      if (next && next.key !== selectedScenarioKey) {
+        setSelectedScenarioKey(next.key);
+      }
+    });
   };
+
+  useEffect(() => {
+    return () => {
+      if (demoScrollRafRef.current) {
+        cancelAnimationFrame(demoScrollRafRef.current);
+        demoScrollRafRef.current = 0;
+      }
+    };
+  }, []);
 
   const goToScenario = (index) => {
     const safeIndex = Math.min(Math.max(index, 0), demoScenarios.length - 1);
     const next = demoScenarios[safeIndex];
     if (!next) return;
-    setSelectedScenarioKey(next.key);
+    if (next.key !== selectedScenarioKey) {
+      setSelectedScenarioKey(next.key);
+    }
+    if (demoScrollRafRef.current) {
+      cancelAnimationFrame(demoScrollRafRef.current);
+      demoScrollRafRef.current = 0;
+    }
 
     const slider = demoSliderRef.current;
     if (!slider) return;
@@ -328,14 +352,6 @@ export default function HomePage({
     syncDirectBalance();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tonWallet?.account?.address, onchainBalances.usdt, onchainBalances.ton]);
-
-  useEffect(() => {
-    const slider = demoSliderRef.current;
-    if (!slider) return;
-    const targetLeft = slider.clientWidth * selectedScenarioIndex;
-    if (Math.abs(slider.scrollLeft - targetLeft) < 4) return;
-    slider.scrollTo({ left: targetLeft, behavior: "smooth" });
-  }, [selectedScenarioIndex]);
 
   return (
     <div className="page">

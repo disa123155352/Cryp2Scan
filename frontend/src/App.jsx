@@ -23,13 +23,18 @@ function getTelegramUserIdFromInitData(initDataRaw = "") {
 
 function getTelegramUserIdFallbackFromUrl() {
   try {
-    const urlParams = new URLSearchParams(window.location.search);
-    const directId = urlParams.get("tg_id");
+    const fromSearch = new URLSearchParams(window.location.search);
+    const hashRaw = window.location.hash?.startsWith("#")
+      ? window.location.hash.slice(1)
+      : window.location.hash || "";
+    const fromHash = new URLSearchParams(hashRaw);
+
+    const directId = fromSearch.get("tg_id") || fromHash.get("tg_id");
     if (directId) return String(directId);
-    const tgWebAppData = urlParams.get("tgWebAppData");
+
+    const tgWebAppData = fromSearch.get("tgWebAppData") || fromHash.get("tgWebAppData");
     if (!tgWebAppData) return "";
-    const decoded = decodeURIComponent(tgWebAppData);
-    return getTelegramUserIdFromInitData(decoded);
+    return getTelegramUserIdFromInitData(tgWebAppData);
   } catch {
     return "";
   }
@@ -80,7 +85,7 @@ export default function App() {
         return;
       }
 
-      if (attempts >= 12) {
+      if (attempts >= 30) {
         setTelegramReady(true);
         return;
       }

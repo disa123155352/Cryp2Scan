@@ -74,13 +74,13 @@ export default function App() {
     }
   };
 
-  const runDemoPayment = async () => {
+  const runDemoPayment = async (demoOptions = {}) => {
     if (!telegramId) {
       return { ok: false, message: "Telegram ID не найден" };
     }
 
     try {
-      const result = await apiPost("/demo/run", { telegramId });
+      const result = await apiPost("/demo/run", { telegramId, ...demoOptions });
       await loadAll();
       return { ok: true, result };
     } catch (error) {

@@ -66,6 +66,7 @@ export default function HomePage({
   const [investorResult, setInvestorResult] = useState(null);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetInfo, setResetInfo] = useState("");
+  const [selectedScenarioKey, setSelectedScenarioKey] = useState("supermarket");
   const tonWallet = useTonWallet();
   const isWalletConnectedInSdk = Boolean(tonWallet?.account?.address);
   const isWalletConnected = walletStatus.connected || isWalletConnectedInSdk;
@@ -113,6 +114,45 @@ export default function HomePage({
       maximumFractionDigits: 2
     });
 
+  const formatPercent = (value) =>
+    Number(value || 0).toLocaleString("ru-RU", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+
+  const demoScenarios = [
+    {
+      key: "supermarket",
+      title: "Супермаркет",
+      subtitle: "Пятёрочка",
+      storeName: "Пятёрочка",
+      amountRub: 1890,
+      merchantId: "m_demo_market",
+      stepDelayMs: 520
+    },
+    {
+      key: "coffee",
+      title: "Кофейня",
+      subtitle: "Ежедневная покупка",
+      storeName: "Кофейня",
+      amountRub: 390,
+      merchantId: "m_demo_coffee",
+      stepDelayMs: 260
+    },
+    {
+      key: "fuel",
+      title: "АЗС",
+      subtitle: "Оплата топлива",
+      storeName: "АЗС",
+      amountRub: 3250,
+      merchantId: "m_demo_fuel",
+      stepDelayMs: 760
+    }
+  ];
+
+  const selectedScenario =
+    demoScenarios.find((item) => item.key === selectedScenarioKey) || demoScenarios[0];
+
   const investorSteps = [
     { key: "scan", title: "Сканируем QR покупки" },
     { key: "crypto", title: "Списываем криптовалюту клиента" },
@@ -131,32 +171,47 @@ export default function HomePage({
     setInvestorError("");
     setInvestorResult(null);
     setResetInfo("");
+    const uiStepDelay = Math.min(Math.max(Number(selectedScenario?.stepDelayMs || 500), 220), 900);
     const startedAt = Date.now();
 
     try {
       setInvestorStep(0);
-      await sleep(450);
+      await sleep(uiStepDelay);
 
       setInvestorStep(1);
-      await sleep(500);
+      await sleep(uiStepDelay);
 
       setInvestorStep(2);
-      const data = await onRunDemo?.();
+      const data = await onRunDemo?.({
+        scenario: selectedScenario.key,
+        storeName: selectedScenario.storeName,
+        merchantId: selectedScenario.merchantId,
+        amountRub: selectedScenario.amountRub,
+        stepDelayMs: selectedScenario.stepDelayMs
+      });
       if (!data?.ok) {
         setInvestorError(data?.message || "Не удалось запустить demo");
         return;
       }
 
       const quote = data?.result?.quote || {};
+      const economics = data?.result?.economics || {};
+      const scenario = data?.result?.scenario || {};
       setInvestorStep(3);
-      await sleep(420);
+      await sleep(uiStepDelay);
 
       setInvestorResult({
-        storeName: quote.storeName || "Магазин",
+        scenarioTitle: scenario.title || selectedScenario.title,
+        storeName: quote.storeName || selectedScenario.title || "Магазин",
         amountRub: Number(quote.amountRub || 0),
         amountUsdt: Number(quote.amountUsdt || 0),
         totalUsdt: Number(quote.totalUsdt || quote.amountUsdt || 0),
         feeUsdt: Number(quote.feeUsdt || 0),
+        feeRub: Number(economics.feeRub || 0),
+        merchantPayoutRub: Number(economics.merchantPayoutRub || quote.amountRub || 0),
+        serviceMarginRub: Number(economics.serviceMarginRub || economics.feeRub || 0),
+        grossMarginPercent: Number(economics.grossMarginPercent || 0),
+        effectiveFeePercent: Number(economics.effectiveFeePercent || 0),
         durationSec: ((Date.now() - startedAt) / 1000).toFixed(1)
       });
     } catch {
@@ -304,6 +359,21 @@ export default function HomePage({
       <section className="card demo-card">
         <p className="label">Investor Demo</p>
         <p className="demo-card-sub">Сценарий для презентации: клиент платит криптой, магазин получает рубли</p>
+        <div className="demo-scenarios">
+          {demoScenarios.map((scenario) => (
+            <button
+              key={scenario.key}
+              type="button"
+              className={`demo-scenario-btn ${selectedScenarioKey === scenario.key ? "active" : ""}`}
+              onClick={() => setSelectedScenarioKey(scenario.key)}
+              disabled={investorLoading || resetLoading}
+            >
+              <b>{scenario.title}</b>
+              <span>{scenario.subtitle}</span>
+              <i>Чек: ₽ {formatNumber(scenario.amountRub)}</i>
+            </button>
+          ))}
+        </div>
         <div className="demo-card-actions">
           <button
             type="button"
@@ -341,6 +411,7 @@ export default function HomePage({
             </div>
 
             <h3 className="investor-title">Клиент платит криптой, магазин получает рубли</h3>
+            <p className="home-status">Сценарий: {selectedScenario.title}</p>
 
             <div className="investor-progress">
               <div style={{ width: `${investorProgress}%` }} />
@@ -362,24 +433,50 @@ export default function HomePage({
             {investorError && <p className="bad">{investorError}</p>}
 
             {investorResult && (
-              <section className="investor-summary">
-                <article>
-                  <span>Сумма покупки</span>
-                  <b>₽ {formatNumber(investorResult.amountRub)}</b>
-                </article>
-                <article>
-                  <span>Списано у клиента</span>
-                  <b>{formatNumber(investorResult.totalUsdt)} USDT</b>
-                </article>
-                <article>
-                  <span>Комиссия сервиса</span>
-                  <b>{formatNumber(investorResult.feeUsdt)} USDT</b>
-                </article>
-                <article>
-                  <span>Время сделки</span>
-                  <b>{investorResult.durationSec} сек</b>
-                </article>
-              </section>
+              <>
+                <section className="investor-summary">
+                  <article>
+                    <span>Сценарий</span>
+                    <b>{investorResult.scenarioTitle}</b>
+                  </article>
+                  <article>
+                    <span>Сумма покупки</span>
+                    <b>₽ {formatNumber(investorResult.amountRub)}</b>
+                  </article>
+                  <article>
+                    <span>Списано у клиента</span>
+                    <b>{formatNumber(investorResult.totalUsdt)} USDT</b>
+                  </article>
+                  <article>
+                    <span>Время сделки</span>
+                    <b>{investorResult.durationSec} сек</b>
+                  </article>
+                </section>
+
+                <section className="investor-economics">
+                  <p className="label">Юнит-экономика сделки</p>
+                  <div className="investor-economics-grid">
+                    <article>
+                      <span>Выплата магазину</span>
+                      <b>₽ {formatNumber(investorResult.merchantPayoutRub)}</b>
+                    </article>
+                    <article>
+                      <span>Комиссия сервиса</span>
+                      <b>₽ {formatNumber(investorResult.feeRub)}</b>
+                      <small>{formatNumber(investorResult.feeUsdt)} USDT</small>
+                    </article>
+                    <article>
+                      <span>Маржа сервиса</span>
+                      <b>₽ {formatNumber(investorResult.serviceMarginRub)}</b>
+                    </article>
+                    <article>
+                      <span>Маржа от чека</span>
+                      <b>{formatPercent(investorResult.grossMarginPercent)}%</b>
+                      <small>Эфф. комиссия {formatPercent(investorResult.effectiveFeePercent)}%</small>
+                    </article>
+                  </div>
+                </section>
+              </>
             )}
 
             <div className="investor-actions">

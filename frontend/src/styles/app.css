@@ -184,6 +184,46 @@ body {
   font-size: 13px;
 }
 
+.demo-scenarios {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.demo-scenario-btn {
+  border: 1px solid #2f3748;
+  border-radius: 12px;
+  background: #121722;
+  color: #dfe7f6;
+  padding: 10px;
+  text-align: left;
+  display: grid;
+  gap: 2px;
+  cursor: pointer;
+}
+
+.demo-scenario-btn b {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.demo-scenario-btn span {
+  font-size: 12px;
+  color: var(--sub);
+}
+
+.demo-scenario-btn i {
+  font-style: normal;
+  font-size: 12px;
+  color: #9fc8df;
+}
+
+.demo-scenario-btn.active {
+  border-color: #57b7e2;
+  box-shadow: 0 0 0 1px rgba(94, 200, 255, 0.14);
+}
+
 .demo-card-actions {
   display: grid;
   grid-template-columns: 1fr;
@@ -319,6 +359,43 @@ body {
   margin-top: 4px;
   color: #e8f4ff;
   font-size: 16px;
+}
+
+.investor-economics {
+  margin-top: 12px;
+}
+
+.investor-economics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.investor-economics-grid article {
+  border: 1px solid #2f3748;
+  border-radius: 12px;
+  background: #111723;
+  padding: 10px;
+}
+
+.investor-economics-grid span {
+  display: block;
+  color: var(--sub);
+  font-size: 12px;
+}
+
+.investor-economics-grid b {
+  display: block;
+  margin-top: 4px;
+  color: #ecf7ff;
+  font-size: 16px;
+}
+
+.investor-economics-grid small {
+  display: block;
+  margin-top: 3px;
+  color: #9ab1cd;
+  font-size: 11px;
 }
 
 .investor-actions {

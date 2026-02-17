@@ -19,6 +19,32 @@ const FEE_PERCENT = 0.01;
 const VASP_WALLET_ADDRESS = String(process.env.VASP_WALLET_ADDRESS || process.env.MERCHANT_WALLET_ADDRESS || "").trim();
 const TON_PAYMENT_NETWORK = String(process.env.TON_PAYMENT_NETWORK || "mainnet").trim() || "mainnet";
 const SBP_MOCK_DELAY_MS = Number(process.env.SBP_MOCK_DELAY_MS || 1500);
+const DEMO_SCENARIOS = {
+  supermarket: {
+    key: "supermarket",
+    title: "Супермаркет",
+    storeName: "Пятёрочка",
+    merchantId: "m_demo_market",
+    amountRub: 1890,
+    stepDelayMs: 520
+  },
+  coffee: {
+    key: "coffee",
+    title: "Кофейня",
+    storeName: "Кофейня",
+    merchantId: "m_demo_coffee",
+    amountRub: 390,
+    stepDelayMs: 260
+  },
+  fuel: {
+    key: "fuel",
+    title: "АЗС",
+    storeName: "АЗС",
+    merchantId: "m_demo_fuel",
+    amountRub: 3250,
+    stepDelayMs: 760
+  }
+};
 const ADMIN_TELEGRAM_IDS = String(process.env.ADMIN_TELEGRAM_IDS || "")
   .split(",")
   .map((value) => value.trim())
@@ -812,10 +838,14 @@ app.post("/api/pay/onchain", async (req, res) => {
 
 app.post("/api/demo/run", async (req, res) => {
   const telegramId = resolveTelegramId(req, req.body || {});
-  const storeName = String(req.body?.storeName || "Пятёрочка").trim();
-  const merchantId = String(req.body?.merchantId || "m_demo_001").trim();
-  const orderId = String(req.body?.orderId || `demo_${Date.now()}`).trim();
-  const amountRubInput = Number(req.body?.amountRub || 799);
+  const scenarioKey = String(req.body?.scenario || "supermarket").trim().toLowerCase();
+  const scenario = DEMO_SCENARIOS[scenarioKey] || DEMO_SCENARIOS.supermarket;
+  const storeName = String(req.body?.storeName || scenario.storeName).trim();
+  const merchantId = String(req.body?.merchantId || scenario.merchantId).trim();
+  const orderId = String(req.body?.orderId || `demo_${scenario.key}_${Date.now()}`).trim();
+  const amountRubInput = Number(req.body?.amountRub || scenario.amountRub);
+  const stepDelayRaw = Number(req.body?.stepDelayMs || scenario.stepDelayMs || 450);
+  const stepDelayMs = Math.min(Math.max(stepDelayRaw, 150), 3000);
 
   if (!telegramId || !storeName || !merchantId || !orderId || !Number.isFinite(amountRubInput) || amountRubInput <= 0) {
     return res.status(400).json({ error: "Неверные данные для demo-оплаты" });
@@ -827,6 +857,11 @@ app.post("/api/demo/run", async (req, res) => {
   const totalUsdt = +(amountUsdt + feeUsdt).toFixed(2);
   const totalRub = +(totalUsdt * RATE_RUB_PER_USDT).toFixed(2);
   const amountTon = +(totalRub / RATE_RUB_PER_TON).toFixed(6);
+  const feeRub = +(feeUsdt * RATE_RUB_PER_USDT).toFixed(2);
+  const merchantPayoutRub = +amountRub.toFixed(2);
+  const serviceMarginRub = +feeRub.toFixed(2);
+  const grossMarginPercent = amountRub > 0 ? +((serviceMarginRub / amountRub) * 100).toFixed(2) : 0;
+  const effectiveFeePercent = amountUsdt > 0 ? +((feeUsdt / amountUsdt) * 100).toFixed(2) : 0;
   const txHash = buildDemoTxHash(`${telegramId}:${orderId}`);
   const payoutReference = buildPayoutReference();
   const payoutStatusFinal = "SUCCESS";
@@ -835,16 +870,16 @@ app.post("/api/demo/run", async (req, res) => {
   const storeLabel = `${storeName} (DEMO)`;
 
   const stages = [
-    { key: "scan", title: "QR отсканирован", status: "SUCCESS" },
-    { key: "crypto", title: "Списание крипты клиента", status: "SUCCESS" },
-    { key: "convert", title: "Конвертация в рубли", status: "SUCCESS" },
-    { key: "payout", title: "Выплата магазину по СБП", status: "SUCCESS" }
+    { key: "scan", title: "QR отсканирован", status: "SUCCESS", etaMs: stepDelayMs },
+    { key: "crypto", title: "Списание крипты клиента", status: "SUCCESS", etaMs: stepDelayMs },
+    { key: "convert", title: "Конвертация в рубли", status: "SUCCESS", etaMs: stepDelayMs },
+    { key: "payout", title: "Выплата магазину по СБП", status: "SUCCESS", etaMs: stepDelayMs }
   ];
 
   if (!HAS_DATABASE) {
-    await delay(400);
-    await delay(400);
-    await delay(400);
+    await delay(stepDelayMs);
+    await delay(stepDelayMs);
+    await delay(stepDelayMs);
 
     const tx = {
       id: `tx_${Date.now()}`,
@@ -871,6 +906,10 @@ app.post("/api/demo/run", async (req, res) => {
     return res.json({
       status: "SUCCESS",
       message: "Демо-оплата успешно выполнена",
+      scenario: {
+        key: scenario.key,
+        title: scenario.title
+      },
       stages,
       quote: {
         storeName,
@@ -882,6 +921,17 @@ app.post("/api/demo/run", async (req, res) => {
         totalUsdt,
         totalTon: amountTon,
         paymentNetwork: TON_PAYMENT_NETWORK
+      },
+      economics: {
+        amountRub,
+        merchantPayoutRub,
+        amountUsdt,
+        totalUsdt,
+        feeUsdt,
+        feeRub,
+        serviceMarginRub,
+        grossMarginPercent,
+        effectiveFeePercent
       },
       transaction: tx
     });
@@ -927,7 +977,7 @@ app.post("/api/demo/run", async (req, res) => {
       ]
     );
 
-    await delay(450);
+    await delay(stepDelayMs);
 
     await client.query(
       `
@@ -938,7 +988,7 @@ app.post("/api/demo/run", async (req, res) => {
       [cryptoStatusFinal, inserted.rows[0].id]
     );
 
-    await delay(450);
+    await delay(stepDelayMs);
 
     await client.query(
       `
@@ -954,6 +1004,10 @@ app.post("/api/demo/run", async (req, res) => {
     return res.json({
       status: "SUCCESS",
       message: "Демо-оплата успешно выполнена",
+      scenario: {
+        key: scenario.key,
+        title: scenario.title
+      },
       stages,
       quote: {
         storeName,
@@ -965,6 +1019,17 @@ app.post("/api/demo/run", async (req, res) => {
         totalUsdt,
         totalTon: amountTon,
         paymentNetwork: TON_PAYMENT_NETWORK
+      },
+      economics: {
+        amountRub,
+        merchantPayoutRub,
+        amountUsdt,
+        totalUsdt,
+        feeUsdt,
+        feeRub,
+        serviceMarginRub,
+        grossMarginPercent,
+        effectiveFeePercent
       },
       transaction: {
         id: `tx_${inserted.rows[0].id}`,

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { apiGet } from "./api/client";
+import { apiGet, apiPost } from "./api/client";
 import BottomNav from "./components/BottomNav";
 import HomePage from "./pages/HomePage";
 import HistoryPage from "./pages/HistoryPage";
@@ -71,6 +71,20 @@ export default function App() {
       setIsAdmin(Boolean(access?.allowed));
     } catch {
       setIsAdmin(false);
+    }
+  };
+
+  const runDemoPayment = async () => {
+    if (!telegramId) {
+      return { ok: false, message: "Telegram ID не найден" };
+    }
+
+    try {
+      const result = await apiPost("/demo/run", { telegramId });
+      await loadAll();
+      return { ok: true, result };
+    } catch (error) {
+      return { ok: false, message: error?.message || "Не удалось запустить demo" };
     }
   };
 
@@ -178,6 +192,7 @@ export default function App() {
           telegramId={telegramId}
           onOpenTopUp={() => setScreen("topup")}
           onOpenSettings={() => setScreen("settings")}
+          onRunDemo={runDemoPayment}
         />
       );
     }

@@ -47,10 +47,14 @@ async function fetchBalancesWithRetry(address, retries = 2) {
   throw lastError || new Error("balance_unavailable");
 }
 
-export default function HomePage({ homeData, telegramId, onOpenTopUp, onOpenSettings }) {
+export default function HomePage({ homeData, telegramId, onOpenTopUp, onOpenSettings, onRunDemo }) {
   const [activeBalanceCard, setActiveBalanceCard] = useState(0);
   const [walletStatus, setWalletStatus] = useState({ connected: false, balances: { usdt: 0, ton: 0 }, loading: true });
   const [walletHint, setWalletHint] = useState("");
+  const [demoLoading, setDemoLoading] = useState(false);
+  const [demoStageText, setDemoStageText] = useState("");
+  const [demoResult, setDemoResult] = useState(null);
+  const [demoError, setDemoError] = useState("");
   const tonWallet = useTonWallet();
   const isWalletConnectedInSdk = Boolean(tonWallet?.account?.address);
   const isWalletConnected = walletStatus.connected || isWalletConnectedInSdk;
@@ -97,6 +101,48 @@ export default function HomePage({ homeData, telegramId, onOpenTopUp, onOpenSett
       minimumFractionDigits: 1,
       maximumFractionDigits: 2
     });
+
+  const runDemo = async () => {
+    if (demoLoading) return;
+    setDemoLoading(true);
+    setDemoError("");
+    setDemoResult(null);
+
+    const stageTexts = [
+      "1/3 Считываем QR заказа...",
+      "2/3 Списываем крипту клиента...",
+      "3/3 Конвертируем и отправляем ₽ магазину..."
+    ];
+    let stageIndex = 0;
+    setDemoStageText(stageTexts[stageIndex]);
+
+    const timer = setInterval(() => {
+      stageIndex += 1;
+      if (stageIndex < stageTexts.length) {
+        setDemoStageText(stageTexts[stageIndex]);
+      }
+    }, 550);
+
+    try {
+      const data = await onRunDemo?.();
+      if (!data?.ok) {
+        setDemoError(data?.message || "Не удалось запустить demo");
+      } else {
+        const quote = data?.result?.quote || {};
+        setDemoResult({
+          storeName: quote.storeName || "Магазин",
+          amountRub: Number(quote.amountRub || 0),
+          amountUsdt: Number(quote.totalUsdt || quote.amountUsdt || 0)
+        });
+      }
+    } catch {
+      setDemoError("Не удалось запустить demo");
+    } finally {
+      clearInterval(timer);
+      setDemoLoading(false);
+      setDemoStageText("");
+    }
+  };
 
   const loadWalletStatus = async () => {
     try {
@@ -209,6 +255,26 @@ export default function HomePage({ homeData, telegramId, onOpenTopUp, onOpenSett
           <span>⇄</span>
           <small>Обменять</small>
         </button>
+      </section>
+
+      <section className="card demo-card">
+        <p className="label">Demo-режим</p>
+        <p className="demo-card-sub">Один клик: создаем заказ, оплачиваем и записываем в историю</p>
+        <button
+          type="button"
+          className="secondary-btn demo-run-btn"
+          onClick={runDemo}
+          disabled={demoLoading}
+        >
+          {demoLoading ? "Идет demo-оплата..." : "Запустить demo-оплату"}
+        </button>
+        {demoLoading && demoStageText && <p className="home-status">{demoStageText}</p>}
+        {demoError && <p className="bad">{demoError}</p>}
+        {demoResult && (
+          <p className="ok">
+            Demo готово: {demoResult.storeName}, ₽ {formatNumber(demoResult.amountRub)} ({formatNumber(demoResult.amountUsdt)} USDT)
+          </p>
+        )}
       </section>
 
       <section className="wallet-slider-wrap">

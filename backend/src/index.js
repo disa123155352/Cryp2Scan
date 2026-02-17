@@ -68,6 +68,13 @@ function buildPayoutReference() {
   return `sbp_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 }
 
+function buildDemoTxHash(seed = "") {
+  return crypto
+    .createHash("sha256")
+    .update(`demo:${Date.now()}:${Math.random()}:${seed}`)
+    .digest("hex");
+}
+
 async function ensureUserAndBalance(client, telegramId) {
   await client.query(
     `
@@ -798,6 +805,189 @@ app.post("/api/pay/onchain", async (req, res) => {
   } catch (error) {
     await client.query("ROLLBACK");
     return res.status(500).json({ error: "On-chain payment save error", details: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+app.post("/api/demo/run", async (req, res) => {
+  const telegramId = resolveTelegramId(req, req.body || {});
+  const storeName = String(req.body?.storeName || "Пятёрочка").trim();
+  const merchantId = String(req.body?.merchantId || "m_demo_001").trim();
+  const orderId = String(req.body?.orderId || buildOrderId()).trim();
+  const amountRubInput = Number(req.body?.amountRub || 799);
+
+  if (!telegramId || !storeName || !merchantId || !orderId || !Number.isFinite(amountRubInput) || amountRubInput <= 0) {
+    return res.status(400).json({ error: "Неверные данные для demo-оплаты" });
+  }
+
+  const amountRub = +amountRubInput.toFixed(2);
+  const amountUsdt = +(amountRub / RATE_RUB_PER_USDT).toFixed(2);
+  const feeUsdt = +(amountUsdt * FEE_PERCENT).toFixed(2);
+  const totalUsdt = +(amountUsdt + feeUsdt).toFixed(2);
+  const totalRub = +(totalUsdt * RATE_RUB_PER_USDT).toFixed(2);
+  const amountTon = +(totalRub / RATE_RUB_PER_TON).toFixed(6);
+  const txHash = buildDemoTxHash(`${telegramId}:${orderId}`);
+  const payoutReference = buildPayoutReference();
+  const payoutStatusFinal = "SUCCESS";
+  const cryptoStatusFinal = "CONFIRMED";
+  const receiverWalletAddress = String(VASP_WALLET_ADDRESS || "demo_vasp_wallet").trim();
+  const storeLabel = `${storeName} (DEMO)`;
+
+  const stages = [
+    { key: "scan", title: "QR отсканирован", status: "SUCCESS" },
+    { key: "crypto", title: "Списание крипты клиента", status: "SUCCESS" },
+    { key: "convert", title: "Конвертация в рубли", status: "SUCCESS" },
+    { key: "payout", title: "Выплата магазину по СБП", status: "SUCCESS" }
+  ];
+
+  if (!HAS_DATABASE) {
+    await delay(400);
+    await delay(400);
+    await delay(400);
+
+    const tx = {
+      id: `tx_${Date.now()}`,
+      date: new Date().toISOString(),
+      storeName: storeLabel,
+      amountRub,
+      amountUsdt: totalUsdt,
+      amountTon,
+      txHash,
+      paymentMethod: "crypto_vasp",
+      merchantId,
+      orderId,
+      cryptoStatus: cryptoStatusFinal,
+      payoutStatus: payoutStatusFinal,
+      payoutReference,
+      senderWalletAddress: "demo_client_wallet",
+      receiverWalletAddress,
+      customerTelegramId: telegramId,
+      status: "SUCCESS"
+    };
+
+    memoryState.history.unshift(tx);
+
+    return res.json({
+      status: "SUCCESS",
+      message: "Демо-оплата успешно выполнена",
+      stages,
+      quote: {
+        storeName,
+        merchantId,
+        orderId,
+        amountRub,
+        amountUsdt,
+        feeUsdt,
+        totalUsdt,
+        totalTon: amountTon,
+        paymentNetwork: TON_PAYMENT_NETWORK
+      },
+      transaction: tx
+    });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const userId = await ensureUserAndBalance(client, telegramId);
+
+    const inserted = await client.query(
+      `
+        INSERT INTO transactions (
+          user_id,
+          store_name,
+          merchant_id,
+          order_id,
+          amount_rub,
+          amount_usdt,
+          amount_ton,
+          payment_method,
+          tx_hash,
+          crypto_status,
+          payout_status,
+          sender_wallet_address,
+          receiver_wallet_address,
+          status
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, 'crypto_vasp', $8, 'PROCESSING', 'PROCESSING', $9, $10, 'PROCESSING')
+        RETURNING id, created_at
+      `,
+      [
+        userId,
+        storeLabel,
+        merchantId,
+        orderId,
+        amountRub,
+        totalUsdt,
+        amountTon,
+        txHash,
+        "demo_client_wallet",
+        receiverWalletAddress
+      ]
+    );
+
+    await delay(450);
+
+    await client.query(
+      `
+        UPDATE transactions
+        SET crypto_status = $1
+        WHERE id = $2
+      `,
+      [cryptoStatusFinal, inserted.rows[0].id]
+    );
+
+    await delay(450);
+
+    await client.query(
+      `
+        UPDATE transactions
+        SET payout_status = $1, payout_reference = $2, status = 'SUCCESS'
+        WHERE id = $3
+      `,
+      [payoutStatusFinal, payoutReference, inserted.rows[0].id]
+    );
+
+    await client.query("COMMIT");
+
+    return res.json({
+      status: "SUCCESS",
+      message: "Демо-оплата успешно выполнена",
+      stages,
+      quote: {
+        storeName,
+        merchantId,
+        orderId,
+        amountRub,
+        amountUsdt,
+        feeUsdt,
+        totalUsdt,
+        totalTon: amountTon,
+        paymentNetwork: TON_PAYMENT_NETWORK
+      },
+      transaction: {
+        id: `tx_${inserted.rows[0].id}`,
+        date: inserted.rows[0].created_at,
+        storeName: storeLabel,
+        amountRub,
+        amountUsdt: totalUsdt,
+        amountTon,
+        txHash,
+        paymentMethod: "crypto_vasp",
+        merchantId,
+        orderId,
+        cryptoStatus: cryptoStatusFinal,
+        payoutStatus: payoutStatusFinal,
+        payoutReference,
+        senderWalletAddress: "demo_client_wallet",
+        receiverWalletAddress,
+        status: "SUCCESS"
+      }
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    return res.status(500).json({ error: "Demo payment error", details: error.message });
   } finally {
     client.release();
   }

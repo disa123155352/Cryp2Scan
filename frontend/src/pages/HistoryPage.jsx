@@ -1,4 +1,11 @@
 export default function HistoryPage({ items }) {
+  const shortHash = (value) => {
+    const hash = String(value || "");
+    if (!hash) return "";
+    if (hash.length < 22) return hash;
+    return `${hash.slice(0, 10)}...${hash.slice(-10)}`;
+  };
+
   const toStatus = (status) => {
     if (status === "SUCCESS") return "Успешно";
     if (status === "FAILED") return "Ошибка";
@@ -17,6 +24,8 @@ export default function HistoryPage({ items }) {
               <p>{new Date(item.date).toLocaleString("ru-RU")}</p>
               <p>{Number(item.amountRub) > 0 ? `₽ ${item.amountRub}` : "Без суммы в ₽"}</p>
               <p>{item.storeName === "Пополнение баланса" ? `+${item.amountUsdt} USDT` : `${item.amountUsdt} USDT`}</p>
+              {item.paymentMethod === "ton_wallet" && <p><b>TON:</b> {item.amountTon}</p>}
+              {item.txHash && <p className="history-tx-hash"><b>Hash:</b> {shortHash(item.txHash)}</p>}
               <p className={item.status === "SUCCESS" ? "ok" : "bad"}>{toStatus(item.status)}</p>
             </section>
           ))}

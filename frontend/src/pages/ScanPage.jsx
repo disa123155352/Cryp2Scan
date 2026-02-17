@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import QrScanner from "qr-scanner";
+import { useTonConnectUI, useTonWallet } from "@tonconnect/ui-react";
 import { apiPost } from "../api/client";
 
 function parseQrPayload(raw) {
@@ -9,7 +10,11 @@ function parseQrPayload(raw) {
   if (raw.includes("store=") && raw.includes("amount=")) {
     const parts = Object.fromEntries(raw.split(";").map((p) => p.split("=")));
     if (parts.store && parts.amount) {
-      return { store: parts.store, amount: Number(parts.amount) };
+      return {
+        store: parts.store,
+        amount: Number(parts.amount),
+        wallet: parts.wallet || parts.address || parts.tonWallet || ""
+      };
     }
   }
 
@@ -19,7 +24,11 @@ function parseQrPayload(raw) {
     const store = data.store || data.merchant || data.shop;
     const amount = Number(data.amount || data.sum || data.total);
     if (store && Number.isFinite(amount) && amount > 0) {
-      return { store, amount };
+      return {
+        store,
+        amount,
+        wallet: data.wallet || data.walletAddress || data.address || data.tonWallet || ""
+      };
     }
   } catch {
     // ignore invalid JSON
@@ -31,7 +40,14 @@ function parseQrPayload(raw) {
     const store = url.searchParams.get("store") || url.searchParams.get("merchant");
     const amount = Number(url.searchParams.get("amount") || url.searchParams.get("sum"));
     if (store && Number.isFinite(amount) && amount > 0) {
-      return { store, amount };
+      return {
+        store,
+        amount,
+        wallet: url.searchParams.get("wallet") ||
+          url.searchParams.get("address") ||
+          url.searchParams.get("tonWallet") ||
+          ""
+      };
     }
   } catch {
     // ignore invalid URL
@@ -40,13 +56,33 @@ function parseQrPayload(raw) {
   return null;
 }
 
+function toNanoString(tonAmount) {
+  const value = Number(tonAmount || 0);
+  const nano = Math.round(value * 1e9);
+  if (!Number.isFinite(nano) || nano <= 0) {
+    throw new Error("Некорректная сумма TON");
+  }
+  return String(nano);
+}
+
+function shortenAddress(value = "") {
+  const address = String(value || "");
+  if (!address) return "";
+  if (address.length < 18) return address;
+  return `${address.slice(0, 8)}...${address.slice(-8)}`;
+}
+
 export default function ScanPage({ telegramId, onPaid }) {
   const videoRef = useRef(null);
   const scannerRef = useRef(null);
+  const [tonConnectUI] = useTonConnectUI();
+  const tonWallet = useTonWallet();
 
   const [quote, setQuote] = useState(null);
   const [scanState, setScanState] = useState("idle");
   const [scanError, setScanError] = useState("");
+  const [paymentMessage, setPaymentMessage] = useState("");
+  const [lastTxHash, setLastTxHash] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -82,10 +118,14 @@ export default function ScanPage({ telegramId, onPaid }) {
             try {
               const data = await apiPost("/scan/quote", {
                 storeName: parsed.store,
-                amountRub: parsed.amount
+                amountRub: parsed.amount,
+                merchantWalletAddress: parsed.wallet || undefined
               });
               setQuote(data);
               setScanState("scanned");
+              setScanError("");
+              setPaymentMessage("");
+              setLastTxHash("");
               scanner.stop();
             } catch {
               setScanError("Ошибка расчета");
@@ -118,20 +158,57 @@ export default function ScanPage({ telegramId, onPaid }) {
 
   const pay = async () => {
     if (!quote) return;
+    if (!quote.onchainAvailable || !quote.merchantWalletAddress) {
+      setScanError("Кошелек магазина не настроен. Оплата временно недоступна.");
+      return;
+    }
+
+    if (!tonWallet?.account?.address) {
+      setScanError("Подключите кошелек в Сервисы → Настройки");
+      return;
+    }
+
     setScanState("processing");
+    setScanError("");
+    setPaymentMessage("Подтвердите платеж в кошельке...");
 
     try {
-      const data = await apiPost("/pay", {
+      const tonAmount = Number(quote.totalTon || quote.amountTon || 0);
+      const txResult = await tonConnectUI.sendTransaction({
+        validUntil: Math.floor(Date.now() / 1000) + 10 * 60,
+        messages: [
+          {
+            address: quote.merchantWalletAddress,
+            amount: toNanoString(tonAmount)
+          }
+        ]
+      });
+
+      setPaymentMessage("Сохраняем транзакцию...");
+
+      const data = await apiPost("/pay/onchain", {
         telegramId,
         storeName: quote.storeName,
         amountRub: quote.amountRub,
         amountUsdt: quote.amountUsdt,
-        feeUsdt: quote.feeUsdt
+        amountTon: tonAmount,
+        txBoc: txResult?.boc || "",
+        senderWalletAddress: tonWallet.account.address,
+        merchantWalletAddress: quote.merchantWalletAddress
       });
 
+      setLastTxHash(data?.txHash || "");
+      setPaymentMessage("Оплата подтверждена");
       setScanState(data.status === "SUCCESS" ? "success" : "failed");
       onPaid?.();
-    } catch {
+    } catch (error) {
+      const text = String(error?.message || "").toLowerCase();
+      if (text.includes("reject") || text.includes("cancel")) {
+        setScanError("Платеж отменен в кошельке");
+      } else {
+        setScanError("Не удалось выполнить on-chain оплату");
+      }
+      setPaymentMessage("");
       setScanState("failed");
       onPaid?.();
     }
@@ -140,6 +217,8 @@ export default function ScanPage({ telegramId, onPaid }) {
   const scanAgain = async () => {
     setQuote(null);
     setScanError("");
+    setPaymentMessage("");
+    setLastTxHash("");
     setScanState("scanning");
     if (scannerRef.current) await scannerRef.current.start();
   };
@@ -162,14 +241,28 @@ export default function ScanPage({ telegramId, onPaid }) {
           <p><b>USDT:</b> {quote.amountUsdt}</p>
           <p><b>Курс:</b> {quote.rate}</p>
           <p><b>Комиссия:</b> {quote.feeUsdt} USDT</p>
+          <p><b>К оплате TON:</b> {quote.totalTon}</p>
+          <p><b>Кошелек магазина:</b> {shortenAddress(quote.merchantWalletAddress)}</p>
+          <p><b>Сеть:</b> {quote.paymentNetwork || "mainnet"}</p>
+          {!quote.onchainAvailable && <p className="bad">Кошелек магазина не настроен</p>}
+          {!tonWallet?.account?.address && quote.onchainAvailable && (
+            <p className="label">Для оплаты подключите кошелек в Сервисы → Настройки</p>
+          )}
 
-          <button className="primary-btn" type="button" onClick={pay}>Оплатить</button>
+          <button className="primary-btn" type="button" onClick={pay} disabled={!quote.onchainAvailable}>
+            {quote.onchainAvailable ? "Оплатить через Wallet" : "Оплата недоступна"}
+          </button>
           <button className="secondary-btn" type="button" onClick={scanAgain}>Сканировать снова</button>
         </section>
       )}
 
-      {scanState === "processing" && <section className="card">Обработка...</section>}
-      {scanState === "success" && <section className="card ok">Успешно</section>}
+      {scanState === "processing" && <section className="card">{paymentMessage || "Обработка..."}</section>}
+      {scanState === "success" && (
+        <section className="card ok">
+          <p>Успешно</p>
+          {lastTxHash && <p className="scan-tx-hash">Hash: {lastTxHash}</p>}
+        </section>
+      )}
       {scanState === "failed" && <section className="card bad">Ошибка</section>}
     </div>
   );

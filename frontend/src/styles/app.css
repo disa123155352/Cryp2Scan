@@ -379,6 +379,11 @@ body {
   background: var(--yellow-dark);
 }
 
+.primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .secondary-btn {
   width: 100%;
   border: none;
@@ -422,6 +427,12 @@ body {
   margin-bottom: 8px;
 }
 
+.history-tx-hash {
+  font-size: 12px;
+  color: #95a2bb;
+  word-break: break-all;
+}
+
 .ok {
   color: var(--success);
   font-weight: 700;
@@ -444,6 +455,13 @@ body {
 
 .scan-result-card p {
   margin: 7px 0;
+}
+
+.scan-tx-hash {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #9cb8d6;
+  word-break: break-all;
 }
 
 .profile-card ul {

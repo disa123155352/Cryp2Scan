@@ -53,7 +53,6 @@ export default function HomePage({
   telegramId,
   onOpenTopUp,
   onOpenSettings,
-  onOpenPitch,
   onRunDemo,
   onResetDemo,
   onOpenHistory
@@ -492,14 +491,6 @@ export default function HomePage({
             disabled={resetLoading || investorLoading}
           >
             {resetLoading ? "Сбрасываем..." : "Сбросить demo"}
-          </button>
-          <button
-            type="button"
-            className="primary-btn demo-pitch-btn"
-            onClick={onOpenPitch}
-            disabled={investorLoading || resetLoading}
-          >
-            Открыть презентацию
           </button>
         </div>
         {resetInfo && <p className="home-status">{resetInfo}</p>}

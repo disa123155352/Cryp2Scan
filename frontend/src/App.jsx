@@ -210,7 +210,6 @@ export default function App() {
           telegramId={telegramId}
           onOpenTopUp={() => setScreen("topup")}
           onOpenSettings={() => setScreen("settings")}
-          onOpenPitch={() => setScreen("pitch")}
           onRunDemo={runDemoPayment}
           onResetDemo={resetDemoPayment}
           onOpenHistory={() => setTab("history")}
@@ -223,6 +222,7 @@ export default function App() {
       content = (
         <ServicesPage
           isAdmin={isAdmin}
+          onOpenPitch={() => setScreen("pitch")}
           onOpenSettings={() => setScreen("settings")}
           onOpenAdmin={() => {
             if (isAdmin) setScreen("admin");

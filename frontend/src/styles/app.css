@@ -534,10 +534,6 @@ body {
   font-size: 12px;
 }
 
-.demo-pitch-btn {
-  margin-top: 0;
-}
-
 .card {
   background: linear-gradient(180deg, #171d29 0%, #121722 100%);
   border: 1px solid #2d3546;

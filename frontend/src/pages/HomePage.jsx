@@ -73,6 +73,7 @@ export default function HomePage({
   const shortId = telegramId?.slice(-6) || "000000";
   const onchainBalances = walletStatus?.balances || {};
   const previousTonAddress = useRef("");
+  const demoSliderRef = useRef(null);
 
   const balances = useMemo(() => ({
     usdt: (walletStatus.connected || isWalletConnectedInSdk) ? Number(onchainBalances.usdt || 0) : 0,
@@ -152,6 +153,10 @@ export default function HomePage({
 
   const selectedScenario =
     demoScenarios.find((item) => item.key === selectedScenarioKey) || demoScenarios[0];
+  const selectedScenarioIndex = Math.max(
+    0,
+    demoScenarios.findIndex((item) => item.key === selectedScenarioKey)
+  );
 
   const investorSteps = [
     { key: "scan", title: "Сканируем QR покупки" },
@@ -163,6 +168,31 @@ export default function HomePage({
   const investorProgress = investorStep < 0
     ? 0
     : Math.min(((investorStep + 1) / investorSteps.length) * 100, 100);
+
+  const onScenarioScroll = (event) => {
+    const container = event.currentTarget;
+    const cardWidth = container.clientWidth;
+    if (!cardWidth) return;
+    const index = Math.round(container.scrollLeft / cardWidth);
+    const next = demoScenarios[index];
+    if (next && next.key !== selectedScenarioKey) {
+      setSelectedScenarioKey(next.key);
+    }
+  };
+
+  const goToScenario = (index) => {
+    const safeIndex = Math.min(Math.max(index, 0), demoScenarios.length - 1);
+    const next = demoScenarios[safeIndex];
+    if (!next) return;
+    setSelectedScenarioKey(next.key);
+
+    const slider = demoSliderRef.current;
+    if (!slider) return;
+    slider.scrollTo({
+      left: slider.clientWidth * safeIndex,
+      behavior: "smooth"
+    });
+  };
 
   const runInvestorDemo = async () => {
     if (investorLoading) return;
@@ -299,6 +329,14 @@ export default function HomePage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tonWallet?.account?.address, onchainBalances.usdt, onchainBalances.ton]);
 
+  useEffect(() => {
+    const slider = demoSliderRef.current;
+    if (!slider) return;
+    const targetLeft = slider.clientWidth * selectedScenarioIndex;
+    if (Math.abs(slider.scrollLeft - targetLeft) < 4) return;
+    slider.scrollTo({ left: targetLeft, behavior: "smooth" });
+  }, [selectedScenarioIndex]);
+
   return (
     <div className="page">
       <section className="home-profile">
@@ -359,19 +397,30 @@ export default function HomePage({
       <section className="card demo-card">
         <p className="label">Investor Demo</p>
         <p className="demo-card-sub">Сценарий для презентации: клиент платит криптой, магазин получает рубли</p>
-        <div className="demo-scenarios">
-          {demoScenarios.map((scenario) => (
+        <div className="demo-scenarios-slider" onScroll={onScenarioScroll} ref={demoSliderRef}>
+          {demoScenarios.map((scenario, index) => (
+            <article
+              key={scenario.key}
+              className={`demo-scenario-card ${selectedScenarioIndex === index ? "active" : ""}`}
+            >
+              <div>
+                <b>{scenario.title}</b>
+                <span>{scenario.subtitle}</span>
+              </div>
+              <p>Чек: ₽ {formatNumber(scenario.amountRub)}</p>
+            </article>
+          ))}
+        </div>
+        <div className="demo-scenarios-dots">
+          {demoScenarios.map((scenario, index) => (
             <button
               key={scenario.key}
               type="button"
-              className={`demo-scenario-btn ${selectedScenarioKey === scenario.key ? "active" : ""}`}
-              onClick={() => setSelectedScenarioKey(scenario.key)}
+              className={`demo-scenario-dot ${selectedScenarioIndex === index ? "active" : ""}`}
+              onClick={() => goToScenario(index)}
               disabled={investorLoading || resetLoading}
-            >
-              <b>{scenario.title}</b>
-              <span>{scenario.subtitle}</span>
-              <i>Чек: ₽ {formatNumber(scenario.amountRub)}</i>
-            </button>
+              aria-label={`Сценарий ${scenario.title}`}
+            />
           ))}
         </div>
         <div className="demo-card-actions">

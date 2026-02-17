@@ -90,19 +90,6 @@ export default function InvestorPitchPage({ historyItems = [], onBack }) {
         </div>
       </section>
 
-      <section className="card pitch-ask">
-        <p className="label">Что мы ищем</p>
-        <p>
-          Инвестиции для пилотов с ритейлом, подключения фиатного партнера и масштабирования платежного контура.
-        </p>
-        <button
-          type="button"
-          className="primary-btn"
-          onClick={() => window.open("https://t.me/cryp2scan_support", "_blank")}
-        >
-          Запросить пилот
-        </button>
-      </section>
     </div>
   );
 }

@@ -13,7 +13,8 @@ function parseQrPayload(raw) {
       return {
         store: parts.store,
         amount: Number(parts.amount),
-        wallet: parts.wallet || parts.address || parts.tonWallet || ""
+        merchantId: parts.merchant_id || parts.merchantId || "",
+        orderId: parts.order_id || parts.orderId || ""
       };
     }
   }
@@ -27,7 +28,8 @@ function parseQrPayload(raw) {
       return {
         store,
         amount,
-        wallet: data.wallet || data.walletAddress || data.address || data.tonWallet || ""
+        merchantId: data.merchant_id || data.merchantId || "",
+        orderId: data.order_id || data.orderId || ""
       };
     }
   } catch {
@@ -43,10 +45,8 @@ function parseQrPayload(raw) {
       return {
         store,
         amount,
-        wallet: url.searchParams.get("wallet") ||
-          url.searchParams.get("address") ||
-          url.searchParams.get("tonWallet") ||
-          ""
+        merchantId: url.searchParams.get("merchant_id") || url.searchParams.get("merchantId") || "",
+        orderId: url.searchParams.get("order_id") || url.searchParams.get("orderId") || ""
       };
     }
   } catch {
@@ -119,7 +119,8 @@ export default function ScanPage({ telegramId, onPaid }) {
               const data = await apiPost("/scan/quote", {
                 storeName: parsed.store,
                 amountRub: parsed.amount,
-                merchantWalletAddress: parsed.wallet || undefined
+                merchantId: parsed.merchantId || undefined,
+                orderId: parsed.orderId || undefined
               });
               setQuote(data);
               setScanState("scanned");
@@ -158,8 +159,8 @@ export default function ScanPage({ telegramId, onPaid }) {
 
   const pay = async () => {
     if (!quote) return;
-    if (!quote.onchainAvailable || !quote.merchantWalletAddress) {
-      setScanError("Кошелек магазина не настроен. Оплата временно недоступна.");
+    if (!quote.onchainAvailable || !quote.vaspWalletAddress) {
+      setScanError("Кошелек VASP не настроен. Оплата временно недоступна.");
       return;
     }
 
@@ -178,7 +179,7 @@ export default function ScanPage({ telegramId, onPaid }) {
         validUntil: Math.floor(Date.now() / 1000) + 10 * 60,
         messages: [
           {
-            address: quote.merchantWalletAddress,
+            address: quote.vaspWalletAddress,
             amount: toNanoString(tonAmount)
           }
         ]
@@ -189,16 +190,18 @@ export default function ScanPage({ telegramId, onPaid }) {
       const data = await apiPost("/pay/onchain", {
         telegramId,
         storeName: quote.storeName,
+        merchantId: quote.merchantId,
+        orderId: quote.orderId,
         amountRub: quote.amountRub,
         amountUsdt: quote.amountUsdt,
         amountTon: tonAmount,
         txBoc: txResult?.boc || "",
         senderWalletAddress: tonWallet.account.address,
-        merchantWalletAddress: quote.merchantWalletAddress
+        vaspWalletAddress: quote.vaspWalletAddress
       });
 
       setLastTxHash(data?.txHash || "");
-      setPaymentMessage("Оплата подтверждена");
+      setPaymentMessage("Крипто-оплата подтверждена, выплата ₽ по СБП отправлена");
       setScanState(data.status === "SUCCESS" ? "success" : "failed");
       onPaid?.();
     } catch (error) {
@@ -237,14 +240,17 @@ export default function ScanPage({ telegramId, onPaid }) {
       {quote && (
         <section className="card scan-result-card">
           <p><b>Магазин:</b> {quote.storeName}</p>
+          <p><b>Merchant ID:</b> {quote.merchantId}</p>
+          <p><b>Order ID:</b> {quote.orderId}</p>
           <p><b>Сумма:</b> ₽ {quote.amountRub}</p>
           <p><b>USDT:</b> {quote.amountUsdt}</p>
           <p><b>Курс:</b> {quote.rate}</p>
           <p><b>Комиссия:</b> {quote.feeUsdt} USDT</p>
           <p><b>К оплате TON:</b> {quote.totalTon}</p>
-          <p><b>Кошелек магазина:</b> {shortenAddress(quote.merchantWalletAddress)}</p>
+          <p><b>VASP кошелек:</b> {shortenAddress(quote.vaspWalletAddress)}</p>
           <p><b>Сеть:</b> {quote.paymentNetwork || "mainnet"}</p>
-          {!quote.onchainAvailable && <p className="bad">Кошелек магазина не настроен</p>}
+          <p className="label">Клиент платит криптой → магазин получает ₽ по СБП</p>
+          {!quote.onchainAvailable && <p className="bad">VASP кошелек не настроен</p>}
           {!tonWallet?.account?.address && quote.onchainAvailable && (
             <p className="label">Для оплаты подключите кошелек в Сервисы → Настройки</p>
           )}
@@ -259,7 +265,7 @@ export default function ScanPage({ telegramId, onPaid }) {
       {scanState === "processing" && <section className="card">{paymentMessage || "Обработка..."}</section>}
       {scanState === "success" && (
         <section className="card ok">
-          <p>Успешно</p>
+          <p>Успешно: магазин получит ₽ через СБП</p>
           {lastTxHash && <p className="scan-tx-hash">Hash: {lastTxHash}</p>}
         </section>
       )}

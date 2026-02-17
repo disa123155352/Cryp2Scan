@@ -16,8 +16,9 @@ app.use(express.json());
 const RATE_RUB_PER_USDT = 100;
 const RATE_RUB_PER_TON = Number(process.env.RATE_RUB_PER_TON || 300);
 const FEE_PERCENT = 0.01;
-const MERCHANT_WALLET_ADDRESS = String(process.env.MERCHANT_WALLET_ADDRESS || "").trim();
+const VASP_WALLET_ADDRESS = String(process.env.VASP_WALLET_ADDRESS || process.env.MERCHANT_WALLET_ADDRESS || "").trim();
 const TON_PAYMENT_NETWORK = String(process.env.TON_PAYMENT_NETWORK || "mainnet").trim() || "mainnet";
+const SBP_MOCK_DELAY_MS = Number(process.env.SBP_MOCK_DELAY_MS || 1500);
 
 const memoryState = {
   balance: { usdt: 1250.5, ton: 0, btc: 0 },
@@ -43,6 +44,18 @@ function buildTxHashFromBoc(txBoc) {
   } catch {
     return crypto.createHash("sha256").update(rawBoc).digest("hex");
   }
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function buildOrderId() {
+  return `ord_${Date.now()}`;
+}
+
+function buildPayoutReference() {
+  return `sbp_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 }
 
 async function ensureUserAndBalance(client, telegramId) {
@@ -96,7 +109,23 @@ async function getHistoryFromDb(telegramId) {
     const userId = await ensureUserAndBalance(client, telegramId);
     const txResult = await client.query(
       `
-        SELECT id, store_name, amount_rub, amount_usdt, amount_ton, tx_hash, payment_method, status, created_at
+        SELECT
+          id,
+          store_name,
+          amount_rub,
+          amount_usdt,
+          amount_ton,
+          tx_hash,
+          payment_method,
+          status,
+          merchant_id,
+          order_id,
+          crypto_status,
+          payout_status,
+          payout_reference,
+          sender_wallet_address,
+          receiver_wallet_address,
+          created_at
         FROM transactions
         WHERE user_id = $1
         ORDER BY created_at DESC
@@ -113,6 +142,13 @@ async function getHistoryFromDb(telegramId) {
       amountTon: toNumber(row.amount_ton),
       txHash: row.tx_hash || "",
       paymentMethod: row.payment_method || "internal",
+      merchantId: row.merchant_id || "",
+      orderId: row.order_id || "",
+      cryptoStatus: row.crypto_status || "",
+      payoutStatus: row.payout_status || "",
+      payoutReference: row.payout_reference || "",
+      senderWalletAddress: row.sender_wallet_address || "",
+      receiverWalletAddress: row.receiver_wallet_address || "",
       status: row.status
     }));
   } finally {
@@ -166,6 +202,41 @@ async function initializeDatabaseSchema() {
   await pool.query(`
     ALTER TABLE transactions
     ADD COLUMN IF NOT EXISTS tx_hash TEXT;
+  `);
+
+  await pool.query(`
+    ALTER TABLE transactions
+    ADD COLUMN IF NOT EXISTS merchant_id TEXT;
+  `);
+
+  await pool.query(`
+    ALTER TABLE transactions
+    ADD COLUMN IF NOT EXISTS order_id TEXT;
+  `);
+
+  await pool.query(`
+    ALTER TABLE transactions
+    ADD COLUMN IF NOT EXISTS crypto_status TEXT;
+  `);
+
+  await pool.query(`
+    ALTER TABLE transactions
+    ADD COLUMN IF NOT EXISTS payout_status TEXT;
+  `);
+
+  await pool.query(`
+    ALTER TABLE transactions
+    ADD COLUMN IF NOT EXISTS payout_reference TEXT;
+  `);
+
+  await pool.query(`
+    ALTER TABLE transactions
+    ADD COLUMN IF NOT EXISTS sender_wallet_address TEXT;
+  `);
+
+  await pool.query(`
+    ALTER TABLE transactions
+    ADD COLUMN IF NOT EXISTS receiver_wallet_address TEXT;
   `);
 
   await pool.query(`
@@ -294,9 +365,13 @@ app.get("/api/home", async (req, res) => {
 });
 
 app.post("/api/scan/quote", (req, res) => {
-  const { storeName, amountRub } = req.body;
-  const merchantWalletAddress = String(req.body?.merchantWalletAddress || MERCHANT_WALLET_ADDRESS || "").trim();
-  if (!storeName || !amountRub || amountRub <= 0) {
+  const storeName = String(req.body?.storeName || req.body?.merchantName || "Магазин").trim();
+  const merchantId = String(req.body?.merchantId || req.body?.merchant_id || "merchant_demo").trim();
+  const orderId = String(req.body?.orderId || req.body?.order_id || buildOrderId()).trim();
+  const amountRub = Number(req.body?.amountRub || req.body?.amount || 0);
+  const vaspWalletAddress = String(req.body?.vaspWalletAddress || VASP_WALLET_ADDRESS || "").trim();
+
+  if (!storeName || !merchantId || !orderId || !amountRub || amountRub <= 0) {
     return res.status(400).json({ error: "Неверные данные QR" });
   }
 
@@ -309,6 +384,8 @@ app.post("/api/scan/quote", (req, res) => {
 
   res.json({
     storeName,
+    merchantId,
+    orderId,
     amountRub,
     amountUsdt,
     rate: RATE_RUB_PER_USDT,
@@ -317,9 +394,10 @@ app.post("/api/scan/quote", (req, res) => {
     tonRate: RATE_RUB_PER_TON,
     amountTon,
     totalTon,
-    merchantWalletAddress,
+    vaspWalletAddress,
     paymentNetwork: TON_PAYMENT_NETWORK,
-    onchainAvailable: Boolean(merchantWalletAddress)
+    onchainAvailable: Boolean(vaspWalletAddress),
+    flow: "client_crypto_to_vasp_then_sbp_to_merchant"
   });
 });
 
@@ -445,40 +523,65 @@ app.post("/api/pay/onchain", async (req, res) => {
   const {
     telegramId,
     storeName,
+    merchantId,
+    orderId,
     amountRub,
     amountUsdt,
     amountTon,
     txBoc,
     senderWalletAddress = "",
-    merchantWalletAddress = ""
+    vaspWalletAddress = ""
   } = req.body || {};
 
-  if (!telegramId || !storeName || !amountRub || !amountUsdt || !amountTon || !txBoc) {
+  if (!telegramId || !storeName || !merchantId || !orderId || !amountRub || !amountUsdt || !amountTon || !txBoc) {
     return res.status(400).json({ error: "Не хватает данных для on-chain оплаты" });
   }
 
   const txHash = buildTxHashFromBoc(txBoc);
   const safeSenderWallet = String(senderWalletAddress || "").trim();
-  const safeMerchantWallet = String(merchantWalletAddress || "").trim();
-  const fullStoreName = safeMerchantWallet
-    ? `${storeName} [TON ${safeMerchantWallet.slice(0, 6)}...${safeMerchantWallet.slice(-6)}]`
+  const safeVaspWallet = String(vaspWalletAddress || VASP_WALLET_ADDRESS || "").trim();
+  const fullStoreName = String(storeName || "").trim();
+  const cryptoStatus = "CONFIRMED";
+  const payoutStatusInitial = "PROCESSING";
+  const payoutStatusFinal = "SUCCESS";
+  const payoutReference = buildPayoutReference();
+
+  if (!safeVaspWallet) {
+    return res.status(400).json({ error: "VASP кошелек не настроен" });
+  }
+
+  const storeLabel = safeVaspWallet
+    ? `${fullStoreName} [VASP ${safeVaspWallet.slice(0, 6)}...${safeVaspWallet.slice(-6)}]`
     : storeName;
 
   if (!HAS_DATABASE) {
     const tx = {
       id: `tx_${Date.now()}`,
       date: new Date().toISOString(),
-      storeName: fullStoreName,
+      storeName: storeLabel,
       amountRub: toNumber(amountRub),
       amountUsdt: toNumber(amountUsdt),
       amountTon: toNumber(amountTon),
       txHash,
-      paymentMethod: "ton_wallet",
+      paymentMethod: "crypto_vasp",
+      merchantId: String(merchantId),
+      orderId: String(orderId),
+      cryptoStatus,
+      payoutStatus: payoutStatusFinal,
+      payoutReference,
       senderWalletAddress: safeSenderWallet,
+      receiverWalletAddress: safeVaspWallet,
       status: "SUCCESS"
     };
     memoryState.history.unshift(tx);
-    return res.json({ status: "SUCCESS", txHash, transaction: tx });
+    return res.json({
+      status: "SUCCESS",
+      txHash,
+      cryptoStatus,
+      payoutStatus: payoutStatusFinal,
+      payoutReference,
+      transaction: tx
+    });
   }
 
   const client = await pool.connect();
@@ -488,11 +591,51 @@ app.post("/api/pay/onchain", async (req, res) => {
 
     const txResult = await client.query(
       `
-        INSERT INTO transactions (user_id, store_name, amount_rub, amount_usdt, amount_ton, payment_method, tx_hash, status)
-        VALUES ($1, $2, $3, $4, $5, 'ton_wallet', $6, 'SUCCESS')
+        INSERT INTO transactions (
+          user_id,
+          store_name,
+          merchant_id,
+          order_id,
+          amount_rub,
+          amount_usdt,
+          amount_ton,
+          payment_method,
+          tx_hash,
+          crypto_status,
+          payout_status,
+          sender_wallet_address,
+          receiver_wallet_address,
+          status
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, 'crypto_vasp', $8, $9, $10, $11, $12, 'PROCESSING')
         RETURNING id, created_at
       `,
-      [userId, fullStoreName, amountRub, amountUsdt, amountTon, txHash]
+      [
+        userId,
+        storeLabel,
+        String(merchantId),
+        String(orderId),
+        amountRub,
+        amountUsdt,
+        amountTon,
+        txHash,
+        cryptoStatus,
+        payoutStatusInitial,
+        safeSenderWallet,
+        safeVaspWallet
+      ]
+    );
+
+    // Mock payout phase: VASP conversion and payout to merchant via SBP.
+    await delay(SBP_MOCK_DELAY_MS);
+
+    await client.query(
+      `
+        UPDATE transactions
+        SET payout_status = $1, payout_reference = $2, status = 'SUCCESS'
+        WHERE id = $3
+      `,
+      [payoutStatusFinal, payoutReference, txResult.rows[0].id]
     );
 
     await client.query("COMMIT");
@@ -500,16 +643,25 @@ app.post("/api/pay/onchain", async (req, res) => {
     return res.json({
       status: "SUCCESS",
       txHash,
+      cryptoStatus,
+      payoutStatus: payoutStatusFinal,
+      payoutReference,
       transaction: {
         id: `tx_${txResult.rows[0].id}`,
         date: txResult.rows[0].created_at,
-        storeName: fullStoreName,
+        storeName: storeLabel,
+        merchantId: String(merchantId),
+        orderId: String(orderId),
         amountRub: toNumber(amountRub),
         amountUsdt: toNumber(amountUsdt),
         amountTon: toNumber(amountTon),
         txHash,
-        paymentMethod: "ton_wallet",
+        paymentMethod: "crypto_vasp",
+        cryptoStatus,
+        payoutStatus: payoutStatusFinal,
+        payoutReference,
         senderWalletAddress: safeSenderWallet,
+        receiverWalletAddress: safeVaspWallet,
         status: "SUCCESS"
       }
     });

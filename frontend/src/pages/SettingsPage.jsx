@@ -84,7 +84,7 @@ export default function SettingsPage({ telegramId, onBack }) {
       <h1>Настройки</h1>
 
       <section className="card settings-card">
-        <p className="label">Telegram Wallet</p>
+        <p className="label">Кошелек Telegram</p>
         {status.loading ? (
           <p className="settings-line">Проверяем статус...</p>
         ) : (

@@ -38,7 +38,7 @@ export default function InvestorPitchPage({ historyItems = [], onBack }) {
 
   const flow = [
     {
-      title: "Клиент сканирует QR",
+      title: "Клиент сканирует QR-код",
       text: "Покупатель подтверждает оплату в приложении одним нажатием."
     },
     {
@@ -47,7 +47,7 @@ export default function InvestorPitchPage({ historyItems = [], onBack }) {
     },
     {
       title: "Конвертация в рубли",
-      text: "Сумма автоматически пересчитывается в ₽ через партнера."
+      text: "Сумма автоматически пересчитывается в ₽ через партнёра."
     },
     {
       title: "Выплата магазину",
@@ -62,7 +62,7 @@ export default function InvestorPitchPage({ historyItems = [], onBack }) {
 
       <section className="card pitch-hero">
         <div className="pitch-hero-top">
-          <p className="label pitch-hero-label">Cryp2Scan • Инвест-демо</p>
+          <p className="label pitch-hero-label">Cryp2Scan • Демо для инвестора</p>
           <span className="pitch-hero-chip">Прототип</span>
         </div>
         <p className="label">Ключевая ценность</p>
@@ -106,12 +106,12 @@ export default function InvestorPitchPage({ historyItems = [], onBack }) {
         <article className="card pitch-item">
           <p className="label">Модель дохода</p>
           <h3>Комиссия + сервис</h3>
-          <p>Зарабатываем на каждой операции и на B2B-тарифах для мерчантов.</p>
+          <p>Зарабатываем на каждой операции и на тарифах для бизнеса.</p>
         </article>
         <article className="card pitch-item">
           <p className="label">Для кого</p>
           <h3>Ритейл с частыми чеками</h3>
-          <p>Сети магазинов, АЗС, кофейни и e-commerce с большим потоком оплат.</p>
+          <p>Сети магазинов, АЗС, кофейни и онлайн-торговля с большим потоком оплат.</p>
         </article>
       </section>
 

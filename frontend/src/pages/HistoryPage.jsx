@@ -48,8 +48,8 @@ export default function HistoryPage({ items }) {
               {item.paymentMethod === "crypto_vasp" && <p><b>TON:</b> {item.amountTon}</p>}
               {item.paymentMethod === "crypto_vasp" && <p><b>Крипто-этап:</b> {toCryptoStatus(item.cryptoStatus)}</p>}
               {item.paymentMethod === "crypto_vasp" && <p><b>Выплата ₽ (СБП):</b> {toPayoutStatus(item.payoutStatus)}</p>}
-              {item.payoutReference && <p><b>SBP Ref:</b> {item.payoutReference}</p>}
-              {item.txHash && <p className="history-tx-hash"><b>Hash:</b> {shortHash(item.txHash)}</p>}
+              {item.payoutReference && <p><b>ID выплаты СБП:</b> {item.payoutReference}</p>}
+              {item.txHash && <p className="history-tx-hash"><b>Хэш:</b> {shortHash(item.txHash)}</p>}
               <p className={statusClass(item.status)}>{toStatus(item.status)}</p>
             </section>
           ))}

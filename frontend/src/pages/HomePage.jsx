@@ -322,7 +322,7 @@ export default function HomePage({
         setResetInfo(data?.message || "Не удалось сбросить демо");
       } else {
         const deleted = Number(data?.result?.deleted || 0);
-        setResetInfo(`Demo очищен. Удалено операций: ${deleted}`);
+        setResetInfo(`Демо очищено. Удалено: ${deleted} операций.`);
         setInvestorResult(null);
         setInvestorStep(-1);
       }
@@ -396,7 +396,7 @@ export default function HomePage({
           <div className="home-avatar">N</div>
           <div>
             <p className="home-name">Владелец счета</p>
-            <p className="home-sub">ID {shortId}</p>
+            <p className="home-sub">ID: {shortId}</p>
           </div>
         </div>
         <div className="home-badge">CRYP2SCAN</div>
@@ -406,8 +406,8 @@ export default function HomePage({
         <section className="card home-wallet-prompt">
           <div>
             <p className="label">Кошелек</p>
-            <p className="home-wallet-prompt-title">Подключите Telegram Wallet</p>
-            <p className="home-wallet-prompt-sub">Чтобы видеть реальный TON/USDT баланс</p>
+            <p className="home-wallet-prompt-title">Подключите кошелек Telegram</p>
+            <p className="home-wallet-prompt-sub">Чтобы видеть реальный баланс TON и USDT</p>
           </div>
           <button type="button" className="primary-btn home-wallet-prompt-btn" onClick={onOpenSettings}>
             Подключить
@@ -573,7 +573,7 @@ export default function HomePage({
                     <article>
                       <span>Маржа от чека</span>
                       <b>{formatPercent(investorResult.grossMarginPercent)}%</b>
-                      <small>Эфф. комиссия {formatPercent(investorResult.effectiveFeePercent)}%</small>
+                      <small>Эффективная комиссия {formatPercent(investorResult.effectiveFeePercent)}%</small>
                     </article>
                   </div>
                 </section>

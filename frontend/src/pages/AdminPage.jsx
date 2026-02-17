@@ -60,7 +60,7 @@ export default function AdminPage({ telegramId, onBack }) {
     } catch (requestError) {
       const message = String(requestError?.message || "");
       if (message.includes("403")) {
-        setError("Доступ в админку запрещен. Добавьте ваш Telegram ID в ADMIN_TELEGRAM_IDS на Render.");
+        setError("Доступ в админку запрещен. Добавьте ваш ID Telegram в переменную ADMIN_TELEGRAM_IDS на Render.");
       } else {
         setError("Не удалось загрузить админку");
       }
@@ -94,7 +94,7 @@ export default function AdminPage({ telegramId, onBack }) {
         <p className="label">Фильтры</p>
         <input
           className="input"
-          placeholder="merchant_id (например m_001)"
+          placeholder="ID магазина (например m_001)"
           value={draftFilters.merchantId}
           onChange={(event) => setDraftFilters((prev) => ({ ...prev, merchantId: event.target.value }))}
         />
@@ -172,13 +172,13 @@ export default function AdminPage({ telegramId, onBack }) {
                 <article className="admin-item" key={item.id}>
                   <p><b>{item.storeName || "Магазин"}</b></p>
                   <p>{toDate(item.date)}</p>
-                  <p><b>Merchant:</b> {item.merchantId || "—"} | <b>Order:</b> {item.orderId || "—"}</p>
-                  <p><b>Клиент TG:</b> {item.customerTelegramId || "—"}</p>
+                  <p><b>ID магазина:</b> {item.merchantId || "—"} | <b>ID заказа:</b> {item.orderId || "—"}</p>
+                  <p><b>Клиент Telegram:</b> {item.customerTelegramId || "—"}</p>
                   <p><b>Сумма:</b> ₽ {item.amountRub} | {item.amountUsdt} USDT | {item.amountTon} TON</p>
                   <p><b>Крипто:</b> {toStatusLabel(item.cryptoStatus)} | <b>СБП:</b> {toStatusLabel(item.payoutStatus)}</p>
                   <p><b>Общий статус:</b> {toStatusLabel(item.status)}</p>
-                  <p><b>TX Hash:</b> {shortValue(item.txHash, 10, 10)}</p>
-                  <p><b>SBP Ref:</b> {item.payoutReference || "—"}</p>
+                  <p><b>Хэш транзакции:</b> {shortValue(item.txHash, 10, 10)}</p>
+                  <p><b>ID выплаты СБП:</b> {item.payoutReference || "—"}</p>
                 </article>
               ))}
             </div>

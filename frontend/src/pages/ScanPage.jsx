@@ -72,6 +72,13 @@ function shortenAddress(value = "") {
   return `${address.slice(0, 8)}...${address.slice(-8)}`;
 }
 
+function toNetworkLabel(value) {
+  const network = String(value || "").toLowerCase();
+  if (network === "mainnet") return "Основная (mainnet)";
+  if (network === "testnet") return "Тестовая (testnet)";
+  return value || "Основная (mainnet)";
+}
+
 export default function ScanPage({ telegramId, onPaid }) {
   const videoRef = useRef(null);
   const scannerRef = useRef(null);
@@ -160,7 +167,7 @@ export default function ScanPage({ telegramId, onPaid }) {
   const pay = async () => {
     if (!quote) return;
     if (!quote.onchainAvailable || !quote.vaspWalletAddress) {
-      setScanError("Кошелек VASP не настроен. Оплата временно недоступна.");
+      setScanError("Кошелек провайдера не настроен. Оплата временно недоступна.");
       return;
     }
 
@@ -209,7 +216,7 @@ export default function ScanPage({ telegramId, onPaid }) {
       if (text.includes("reject") || text.includes("cancel")) {
         setScanError("Платеж отменен в кошельке");
       } else {
-        setScanError("Не удалось выполнить on-chain оплату");
+        setScanError("Не удалось выполнить оплату в сети TON");
       }
       setPaymentMessage("");
       setScanState("failed");
@@ -240,36 +247,36 @@ export default function ScanPage({ telegramId, onPaid }) {
       {quote && (
         <section className="card scan-result-card">
           <p><b>Магазин:</b> {quote.storeName}</p>
-          <p><b>Merchant ID:</b> {quote.merchantId}</p>
-          <p><b>Order ID:</b> {quote.orderId}</p>
+          <p><b>ID магазина:</b> {quote.merchantId || "—"}</p>
+          <p><b>ID заказа:</b> {quote.orderId || "—"}</p>
           <p><b>Сумма:</b> ₽ {quote.amountRub}</p>
           <p><b>USDT:</b> {quote.amountUsdt}</p>
           <p><b>Курс:</b> {quote.rate}</p>
           <p><b>Комиссия:</b> {quote.feeUsdt} USDT</p>
           <p><b>К оплате TON:</b> {quote.totalTon}</p>
-          <p><b>VASP кошелек:</b> {shortenAddress(quote.vaspWalletAddress)}</p>
-          <p><b>Сеть:</b> {quote.paymentNetwork || "mainnet"}</p>
+          <p><b>Кошелек провайдера:</b> {shortenAddress(quote.vaspWalletAddress)}</p>
+          <p><b>Сеть:</b> {toNetworkLabel(quote.paymentNetwork)}</p>
           <p className="label">Клиент платит криптой → магазин получает ₽ по СБП</p>
-          {!quote.onchainAvailable && <p className="bad">VASP кошелек не настроен</p>}
+          {!quote.onchainAvailable && <p className="bad">Кошелек провайдера не настроен</p>}
           {!tonWallet?.account?.address && quote.onchainAvailable && (
             <p className="label">Для оплаты подключите кошелек в Сервисы → Настройки</p>
           )}
 
           <button className="primary-btn" type="button" onClick={pay} disabled={!quote.onchainAvailable}>
-            {quote.onchainAvailable ? "Оплатить через Wallet" : "Оплата недоступна"}
+            {quote.onchainAvailable ? "Оплатить" : "Оплата недоступна"}
           </button>
           <button className="secondary-btn" type="button" onClick={scanAgain}>Сканировать снова</button>
         </section>
       )}
 
-      {scanState === "processing" && <section className="card">{paymentMessage || "Обработка..."}</section>}
+      {scanState === "processing" && <section className="card">{paymentMessage || "Обрабатываем платеж..."}</section>}
       {scanState === "success" && (
         <section className="card ok">
-          <p>Успешно: магазин получит ₽ через СБП</p>
-          {lastTxHash && <p className="scan-tx-hash">Hash: {lastTxHash}</p>}
+          <p>Оплата прошла: магазин получит ₽ через СБП</p>
+          {lastTxHash && <p className="scan-tx-hash">Хэш: {lastTxHash}</p>}
         </section>
       )}
-      {scanState === "failed" && <section className="card bad">Ошибка</section>}
+      {scanState === "failed" && <section className="card bad">Оплата не выполнена</section>}
     </div>
   );
 }

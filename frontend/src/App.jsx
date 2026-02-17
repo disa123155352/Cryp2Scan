@@ -77,7 +77,7 @@ export default function App() {
 
   const runDemoPayment = async (demoOptions = {}) => {
     if (!telegramId) {
-      return { ok: false, message: "Telegram ID не найден" };
+      return { ok: false, message: "ID Telegram не найден" };
     }
 
     try {
@@ -85,13 +85,13 @@ export default function App() {
       await loadAll();
       return { ok: true, result };
     } catch (error) {
-      return { ok: false, message: error?.message || "Не удалось запустить demo" };
+      return { ok: false, message: error?.message || "Не удалось запустить демо" };
     }
   };
 
   const resetDemoPayment = async () => {
     if (!telegramId) {
-      return { ok: false, message: "Telegram ID не найден" };
+      return { ok: false, message: "ID Telegram не найден" };
     }
 
     try {
@@ -99,7 +99,7 @@ export default function App() {
       await loadAll();
       return { ok: true, result };
     } catch (error) {
-      return { ok: false, message: error?.message || "Не удалось сбросить demo" };
+      return { ok: false, message: error?.message || "Не удалось сбросить демо" };
     }
   };
 
@@ -172,8 +172,8 @@ export default function App() {
       <div className="page">
         <section className="card">
           {telegramReady
-            ? "Не удалось определить Telegram ID. Откройте мини-приложение через бота в Telegram."
-            : "Загружаем данные Telegram..."}
+            ? "Не удалось определить ID Telegram. Откройте мини-приложение через бота в Telegram."
+            : "Загружаем данные из Telegram..."}
         </section>
       </div>
     );

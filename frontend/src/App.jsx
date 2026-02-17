@@ -98,9 +98,16 @@ export default function App() {
     // Make Telegram system header blend with app theme and request fullscreen where supported.
     try {
       const webApp = window.Telegram?.WebApp;
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const topInsetFromTelegram = Number(
+        webApp?.contentSafeAreaInset?.top ?? webApp?.safeAreaInset?.top ?? 0
+      );
+      const fallbackTopInset = isIOS ? 52 : 20;
+      const topInset = Math.max(topInsetFromTelegram, fallbackTopInset);
+      document.documentElement.style.setProperty("--tg-top-offset", `${topInset}px`);
+
       webApp?.setHeaderColor?.("#0b0c0f");
       webApp?.setBackgroundColor?.("#0b0c0f");
-      webApp?.requestFullscreen?.();
       webApp?.disableVerticalSwipes?.();
     } catch (error) {
       // Ignore if a Telegram client does not support one of these methods.

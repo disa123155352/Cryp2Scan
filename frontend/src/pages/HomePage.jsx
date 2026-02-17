@@ -28,6 +28,25 @@ async function fetchBalancesFromTonApi(address) {
   };
 }
 
+async function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchBalancesWithRetry(address, retries = 2) {
+  let lastError = null;
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      return await fetchBalancesFromTonApi(address);
+    } catch (error) {
+      lastError = error;
+      if (attempt < retries) {
+        await sleep(450 * (attempt + 1));
+      }
+    }
+  }
+  throw lastError || new Error("balance_unavailable");
+}
+
 export default function HomePage({ homeData, telegramId, onOpenTopUp, onOpenSettings }) {
   const [activeBalanceCard, setActiveBalanceCard] = useState(0);
   const [walletStatus, setWalletStatus] = useState({ connected: false, balances: { usdt: 0, ton: 0 }, loading: true });
@@ -88,7 +107,7 @@ export default function HomePage({ homeData, telegramId, onOpenTopUp, onOpenSett
         balances: data?.balances || { usdt: 0, ton: 0 },
         loading: false
       });
-      setWalletHint(data?.warning || "");
+      setWalletHint("");
     } catch {
       setWalletStatus({ connected: false, balances: { usdt: 0, ton: 0 }, loading: false });
       setWalletHint("");
@@ -115,7 +134,7 @@ export default function HomePage({ homeData, telegramId, onOpenTopUp, onOpenSett
       const walletAddress = tonWallet?.account?.address;
       if (!walletAddress) return;
       try {
-        const liveBalances = await fetchBalancesFromTonApi(walletAddress);
+        const liveBalances = await fetchBalancesWithRetry(walletAddress, 2);
         setWalletStatus((prev) => ({
           ...prev,
           connected: true,
@@ -124,15 +143,16 @@ export default function HomePage({ homeData, telegramId, onOpenTopUp, onOpenSett
         }));
         setWalletHint("");
       } catch {
-        if (!walletHint) {
-          setWalletHint("Баланс временно недоступен");
+        const hasAnyBalance = Number(onchainBalances.usdt || 0) > 0 || Number(onchainBalances.ton || 0) > 0;
+        if (!hasAnyBalance) {
+          setWalletHint("Обновим баланс через пару секунд...");
         }
       }
     };
 
     syncDirectBalance();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tonWallet?.account?.address]);
+  }, [tonWallet?.account?.address, onchainBalances.usdt, onchainBalances.ton]);
 
   return (
     <div className="page">

@@ -42,7 +42,7 @@ body {
 }
 
 .content {
-  padding: 16px;
+  padding: calc(12px + var(--tg-top-offset, 0px)) 16px 16px;
 }
 
 .page h1 {

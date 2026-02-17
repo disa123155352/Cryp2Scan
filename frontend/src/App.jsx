@@ -8,6 +8,7 @@ import ServicesPage from "./pages/ServicesPage";
 import ProfilePage from "./pages/ProfilePage";
 import TopUpPage from "./pages/TopUpPage";
 import SettingsPage from "./pages/SettingsPage";
+import AdminPage from "./pages/AdminPage";
 
 function getTelegramUserIdFromInitData(initDataRaw = "") {
   try {
@@ -149,6 +150,8 @@ export default function App() {
     );
   } else if (screen === "settings") {
     content = <SettingsPage telegramId={telegramId} onBack={() => setScreen("tabs")} />;
+  } else if (screen === "admin") {
+    content = <AdminPage telegramId={telegramId} onBack={() => setScreen("tabs")} />;
   } else {
     if (tab === "home") {
       content = (
@@ -162,7 +165,14 @@ export default function App() {
     }
     if (tab === "history") content = <HistoryPage items={history} />;
     if (tab === "scan") content = <ScanPage telegramId={telegramId} onPaid={loadAll} />;
-    if (tab === "services") content = <ServicesPage onOpenSettings={() => setScreen("settings")} />;
+    if (tab === "services") {
+      content = (
+        <ServicesPage
+          onOpenSettings={() => setScreen("settings")}
+          onOpenAdmin={() => setScreen("admin")}
+        />
+      );
+    }
     if (tab === "profile") content = <ProfilePage profile={profile} />;
   }
 

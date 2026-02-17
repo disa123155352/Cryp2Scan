@@ -19,6 +19,10 @@ const FEE_PERCENT = 0.01;
 const VASP_WALLET_ADDRESS = String(process.env.VASP_WALLET_ADDRESS || process.env.MERCHANT_WALLET_ADDRESS || "").trim();
 const TON_PAYMENT_NETWORK = String(process.env.TON_PAYMENT_NETWORK || "mainnet").trim() || "mainnet";
 const SBP_MOCK_DELAY_MS = Number(process.env.SBP_MOCK_DELAY_MS || 1500);
+const ADMIN_TELEGRAM_IDS = String(process.env.ADMIN_TELEGRAM_IDS || "")
+  .split(",")
+  .map((value) => value.trim())
+  .filter(Boolean);
 
 const memoryState = {
   balance: { usdt: 1250.5, ton: 0, btc: 0 },
@@ -32,6 +36,12 @@ function toNumber(value) {
 
 function resolveTelegramId(req, body = {}) {
   return body.telegramId || req.query.telegramId || null;
+}
+
+function canAccessAdmin(telegramId) {
+  if (!telegramId) return false;
+  if (!ADMIN_TELEGRAM_IDS.length) return true;
+  return ADMIN_TELEGRAM_IDS.includes(String(telegramId));
 }
 
 function buildTxHashFromBoc(txBoc) {
@@ -151,6 +161,123 @@ async function getHistoryFromDb(telegramId) {
       receiverWalletAddress: row.receiver_wallet_address || "",
       status: row.status
     }));
+  } finally {
+    client.release();
+  }
+}
+
+function normalizeAdminRow(row) {
+  return {
+    id: `tx_${row.id}`,
+    date: row.created_at,
+    storeName: row.store_name,
+    amountRub: toNumber(row.amount_rub),
+    amountUsdt: toNumber(row.amount_usdt),
+    amountTon: toNumber(row.amount_ton),
+    txHash: row.tx_hash || "",
+    paymentMethod: row.payment_method || "internal",
+    merchantId: row.merchant_id || "",
+    orderId: row.order_id || "",
+    cryptoStatus: row.crypto_status || "",
+    payoutStatus: row.payout_status || "",
+    payoutReference: row.payout_reference || "",
+    senderWalletAddress: row.sender_wallet_address || "",
+    receiverWalletAddress: row.receiver_wallet_address || "",
+    customerTelegramId: row.customer_telegram_id || "",
+    status: row.status
+  };
+}
+
+function buildAdminSummaryFromItems(items = []) {
+  return {
+    totalTransactions: items.length,
+    totalRub: +items.reduce((sum, item) => sum + toNumber(item.amountRub), 0).toFixed(2),
+    totalUsdt: +items.reduce((sum, item) => sum + toNumber(item.amountUsdt), 0).toFixed(2),
+    totalTon: +items.reduce((sum, item) => sum + toNumber(item.amountTon), 0).toFixed(6),
+    successCount: items.filter((item) => item.status === "SUCCESS").length,
+    processingCount: items.filter((item) => item.status === "PROCESSING").length,
+    failedCount: items.filter((item) => item.status === "FAILED").length,
+    payoutSuccessCount: items.filter((item) => item.payoutStatus === "SUCCESS").length,
+    payoutProcessingCount: items.filter((item) => item.payoutStatus === "PROCESSING").length,
+    payoutFailedCount: items.filter((item) => item.payoutStatus === "FAILED").length,
+    uniqueMerchants: new Set(items.map((item) => item.merchantId).filter(Boolean)).size
+  };
+}
+
+async function getAdminTransactionsFromDb({ merchantId = "", status = "", payoutStatus = "", limit = 100 }) {
+  const client = await pool.connect();
+  try {
+    const query = `
+      SELECT
+        t.id,
+        t.created_at,
+        t.store_name,
+        t.amount_rub,
+        t.amount_usdt,
+        t.amount_ton,
+        t.tx_hash,
+        t.payment_method,
+        t.status,
+        t.merchant_id,
+        t.order_id,
+        t.crypto_status,
+        t.payout_status,
+        t.payout_reference,
+        t.sender_wallet_address,
+        t.receiver_wallet_address,
+        u.telegram_id AS customer_telegram_id
+      FROM transactions t
+      LEFT JOIN users u ON u.id = t.user_id
+      WHERE ($1 = '' OR t.merchant_id = $1)
+        AND ($2 = '' OR t.status = $2)
+        AND ($3 = '' OR t.payout_status = $3)
+      ORDER BY t.created_at DESC
+      LIMIT $4
+    `;
+
+    const result = await client.query(query, [merchantId, status, payoutStatus, limit]);
+    return result.rows.map(normalizeAdminRow);
+  } finally {
+    client.release();
+  }
+}
+
+async function getAdminSummaryFromDb({ merchantId = "", status = "", payoutStatus = "" }) {
+  const client = await pool.connect();
+  try {
+    const query = `
+      SELECT
+        COUNT(*)::INT AS total_transactions,
+        COALESCE(SUM(amount_rub), 0)::NUMERIC AS total_rub,
+        COALESCE(SUM(amount_usdt), 0)::NUMERIC AS total_usdt,
+        COALESCE(SUM(amount_ton), 0)::NUMERIC AS total_ton,
+        SUM(CASE WHEN status = 'SUCCESS' THEN 1 ELSE 0 END)::INT AS success_count,
+        SUM(CASE WHEN status = 'PROCESSING' THEN 1 ELSE 0 END)::INT AS processing_count,
+        SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END)::INT AS failed_count,
+        SUM(CASE WHEN payout_status = 'SUCCESS' THEN 1 ELSE 0 END)::INT AS payout_success_count,
+        SUM(CASE WHEN payout_status = 'PROCESSING' THEN 1 ELSE 0 END)::INT AS payout_processing_count,
+        SUM(CASE WHEN payout_status = 'FAILED' THEN 1 ELSE 0 END)::INT AS payout_failed_count,
+        COUNT(DISTINCT merchant_id)::INT AS unique_merchants
+      FROM transactions
+      WHERE ($1 = '' OR merchant_id = $1)
+        AND ($2 = '' OR status = $2)
+        AND ($3 = '' OR payout_status = $3)
+    `;
+    const result = await client.query(query, [merchantId, status, payoutStatus]);
+    const row = result.rows[0] || {};
+    return {
+      totalTransactions: toNumber(row.total_transactions),
+      totalRub: +toNumber(row.total_rub).toFixed(2),
+      totalUsdt: +toNumber(row.total_usdt).toFixed(2),
+      totalTon: +toNumber(row.total_ton).toFixed(6),
+      successCount: toNumber(row.success_count),
+      processingCount: toNumber(row.processing_count),
+      failedCount: toNumber(row.failed_count),
+      payoutSuccessCount: toNumber(row.payout_success_count),
+      payoutProcessingCount: toNumber(row.payout_processing_count),
+      payoutFailedCount: toNumber(row.payout_failed_count),
+      uniqueMerchants: toNumber(row.unique_merchants)
+    };
   } finally {
     client.release();
   }
@@ -420,6 +547,7 @@ app.post("/api/pay", async (req, res) => {
         amountTon: 0,
         paymentMethod: "internal",
         txHash: "",
+        customerTelegramId: telegramId,
         status: "FAILED"
       });
       return res.status(402).json({ status: "FAILED", message: "Недостаточно баланса" });
@@ -437,6 +565,7 @@ app.post("/api/pay", async (req, res) => {
       amountTon: 0,
       paymentMethod: "internal",
       txHash: "",
+      customerTelegramId: telegramId,
       status: "SUCCESS"
     };
     memoryState.history.unshift(tx);
@@ -571,6 +700,7 @@ app.post("/api/pay/onchain", async (req, res) => {
       payoutReference,
       senderWalletAddress: safeSenderWallet,
       receiverWalletAddress: safeVaspWallet,
+      customerTelegramId: telegramId,
       status: "SUCCESS"
     };
     memoryState.history.unshift(tx);
@@ -692,6 +822,7 @@ app.post("/api/topup", async (req, res) => {
       amountTon: 0,
       paymentMethod: "topup",
       txHash: "",
+      customerTelegramId: telegramId,
       status: "SUCCESS"
     });
     return res.json({
@@ -746,6 +877,87 @@ app.get("/api/history", async (req, res) => {
     res.json({ items });
   } catch (error) {
     res.status(500).json({ error: "Cannot load history", details: error.message });
+  }
+});
+
+app.get("/api/admin/summary", async (req, res) => {
+  const telegramId = resolveTelegramId(req);
+  if (!telegramId) {
+    return res.status(400).json({ error: "telegramId is required" });
+  }
+  if (!canAccessAdmin(telegramId)) {
+    return res.status(403).json({ error: "Доступ к админке запрещен" });
+  }
+
+  const merchantId = String(req.query.merchantId || "").trim();
+  const status = String(req.query.status || "").trim();
+  const payoutStatus = String(req.query.payoutStatus || "").trim();
+
+  try {
+    if (HAS_DATABASE) {
+      const summary = await getAdminSummaryFromDb({ merchantId, status, payoutStatus });
+      return res.json({ summary });
+    }
+
+    let items = [...memoryState.history];
+    if (merchantId) items = items.filter((item) => String(item.merchantId || "") === merchantId);
+    if (status) items = items.filter((item) => String(item.status || "") === status);
+    if (payoutStatus) items = items.filter((item) => String(item.payoutStatus || "") === payoutStatus);
+
+    const summary = buildAdminSummaryFromItems(items);
+    return res.json({ summary });
+  } catch (error) {
+    return res.status(500).json({ error: "Cannot load admin summary", details: error.message });
+  }
+});
+
+app.get("/api/admin/transactions", async (req, res) => {
+  const telegramId = resolveTelegramId(req);
+  if (!telegramId) {
+    return res.status(400).json({ error: "telegramId is required" });
+  }
+  if (!canAccessAdmin(telegramId)) {
+    return res.status(403).json({ error: "Доступ к админке запрещен" });
+  }
+
+  const merchantId = String(req.query.merchantId || "").trim();
+  const status = String(req.query.status || "").trim();
+  const payoutStatus = String(req.query.payoutStatus || "").trim();
+  const limit = Math.min(Math.max(Number(req.query.limit || 100), 1), 500);
+
+  try {
+    if (HAS_DATABASE) {
+      const items = await getAdminTransactionsFromDb({ merchantId, status, payoutStatus, limit });
+      return res.json({ items });
+    }
+
+    let items = memoryState.history.map((item, index) => ({
+      id: item.id || `tx_mem_${index + 1}`,
+      date: item.date,
+      storeName: item.storeName,
+      amountRub: toNumber(item.amountRub),
+      amountUsdt: toNumber(item.amountUsdt),
+      amountTon: toNumber(item.amountTon),
+      txHash: item.txHash || "",
+      paymentMethod: item.paymentMethod || "internal",
+      merchantId: item.merchantId || "",
+      orderId: item.orderId || "",
+      cryptoStatus: item.cryptoStatus || "",
+      payoutStatus: item.payoutStatus || "",
+      payoutReference: item.payoutReference || "",
+      senderWalletAddress: item.senderWalletAddress || "",
+      receiverWalletAddress: item.receiverWalletAddress || "",
+      customerTelegramId: item.customerTelegramId || "",
+      status: item.status || "SUCCESS"
+    }));
+
+    if (merchantId) items = items.filter((item) => String(item.merchantId || "") === merchantId);
+    if (status) items = items.filter((item) => String(item.status || "") === status);
+    if (payoutStatus) items = items.filter((item) => String(item.payoutStatus || "") === payoutStatus);
+
+    return res.json({ items: items.slice(0, limit) });
+  } catch (error) {
+    return res.status(500).json({ error: "Cannot load admin transactions", details: error.message });
   }
 });
 

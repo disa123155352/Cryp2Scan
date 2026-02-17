@@ -280,7 +280,7 @@ export default function HomePage({
         stepDelayMs: selectedScenario.stepDelayMs
       });
       if (!data?.ok) {
-        setInvestorError(data?.message || "Не удалось запустить demo");
+        setInvestorError(data?.message || "Не удалось запустить демо");
         return;
       }
 
@@ -305,7 +305,7 @@ export default function HomePage({
         durationSec: ((Date.now() - startedAt) / 1000).toFixed(1)
       });
     } catch {
-      setInvestorError("Ошибка запуска demo");
+      setInvestorError("Ошибка запуска демо");
     } finally {
       setInvestorLoading(false);
     }
@@ -319,7 +319,7 @@ export default function HomePage({
     try {
       const data = await onResetDemo?.();
       if (!data?.ok) {
-        setResetInfo(data?.message || "Не удалось сбросить demo");
+        setResetInfo(data?.message || "Не удалось сбросить демо");
       } else {
         const deleted = Number(data?.result?.deleted || 0);
         setResetInfo(`Demo очищен. Удалено операций: ${deleted}`);
@@ -327,7 +327,7 @@ export default function HomePage({
         setInvestorStep(-1);
       }
     } catch {
-      setResetInfo("Не удалось сбросить demo");
+      setResetInfo("Не удалось сбросить демо");
     } finally {
       setResetLoading(false);
     }
@@ -447,7 +447,7 @@ export default function HomePage({
       </section>
 
       <section className="card demo-card">
-        <p className="label">Investor Demo</p>
+        <p className="label">Демо для инвестора</p>
         <p className="demo-card-sub">Сценарий для презентации: клиент платит криптой, магазин получает рубли</p>
         <div className="demo-scenarios-slider" onScroll={onScenarioScroll} ref={demoSliderRef}>
           {demoScenarios.map((scenario, index) => (
@@ -482,7 +482,7 @@ export default function HomePage({
             onClick={runInvestorDemo}
             disabled={investorLoading}
           >
-            {investorLoading ? "Идет Investor Demo..." : "Запустить Investor Demo"}
+            {investorLoading ? "Идет демо..." : "Запустить демо"}
           </button>
           <button
             type="button"
@@ -490,7 +490,7 @@ export default function HomePage({
             onClick={resetInvestorDemo}
             disabled={resetLoading || investorLoading}
           >
-            {resetLoading ? "Сбрасываем..." : "Сбросить demo"}
+            {resetLoading ? "Сбрасываем..." : "Сбросить демо"}
           </button>
         </div>
         {resetInfo && <p className="home-status">{resetInfo}</p>}
@@ -500,7 +500,7 @@ export default function HomePage({
         <section className="investor-overlay">
           <div className="card investor-modal">
             <div className="investor-head">
-              <p className="label">Investor Demo</p>
+              <p className="label">Демо для инвестора</p>
               <button
                 type="button"
                 className="topup-back"

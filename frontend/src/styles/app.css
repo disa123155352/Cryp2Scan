@@ -545,7 +545,7 @@ body {
 
 .balance-card {
   background:
-    radial-gradient(circle at 100% -10%, rgba(255, 212, 0, 0.22), transparent 42%),
+    radial-gradient(circle at 100% -10%, rgba(94, 200, 255, 0.2), transparent 42%),
     linear-gradient(140deg, #171a22 0%, #10131a 75%);
   border-color: #343a48;
 }
@@ -588,69 +588,192 @@ body {
 
 .pitch-page h1 {
   margin-top: 0;
-  margin-bottom: 12px;
+  margin-bottom: 2px;
+  letter-spacing: -0.4px;
+}
+
+.pitch-hero {
+  background:
+    radial-gradient(circle at 95% -12%, rgba(94, 200, 255, 0.17), transparent 42%),
+    linear-gradient(155deg, #161c29 0%, #0f1420 80%);
+  border-color: #36445d;
+  margin-bottom: 0;
+}
+
+.pitch-hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.pitch-hero-label {
+  margin: 0;
+}
+
+.pitch-hero-chip {
+  border: 1px solid #4d5f7d;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  color: #d6e9fb;
+  background: rgba(76, 132, 183, 0.14);
+  white-space: nowrap;
 }
 
 .pitch-hero h2 {
   margin: 0 0 8px;
-  font-size: 28px;
+  font-size: 29px;
   line-height: 1.18;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.6px;
 }
 
 .pitch-hero p {
   margin: 0;
-  color: #d3dcf0;
+  color: #d8e4f4;
+  line-height: 1.5;
+}
+
+.pitch-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.pitch-tags span {
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 11px;
+  color: #b8cce4;
+  border: 1px solid #354058;
+  background: rgba(19, 26, 38, 0.9);
+}
+
+.pitch-flow {
+  margin-bottom: 0;
+}
+
+.pitch-flow-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.pitch-flow-item {
+  border: 1px solid #2f394d;
+  border-radius: 14px;
+  background: #111724;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 9px;
+  align-items: start;
+}
+
+.pitch-flow-step {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: #04131f;
+  font-size: 13px;
+  font-weight: 800;
+  background: linear-gradient(140deg, #7ed8ff, #55c4f3);
+  box-shadow: 0 4px 12px rgba(73, 165, 210, 0.28);
+}
+
+.pitch-flow-item h3 {
+  margin: 1px 0 4px;
+  font-size: 14px;
+  line-height: 1.25;
+  color: #eaf2ff;
+}
+
+.pitch-flow-item p {
+  margin: 0;
+  font-size: 12px;
   line-height: 1.45;
+  color: #b9c7dd;
 }
 
 .pitch-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 9px;
 }
 
 .pitch-item {
   margin-bottom: 0;
-  min-height: 128px;
+  min-height: 138px;
+  border-color: #334159;
+  background: linear-gradient(170deg, #141a27 0%, #101520 100%);
+}
+
+.pitch-item h3 {
+  margin: 0 0 7px;
+  font-size: 17px;
+  line-height: 1.2;
+  letter-spacing: -0.2px;
+  color: #edf4ff;
 }
 
 .pitch-item p {
   margin: 0;
-  color: #ced7ea;
-  line-height: 1.4;
+  color: #c8d6ea;
+  line-height: 1.45;
+  font-size: 13px;
+}
+
+.pitch-metrics {
+  margin-bottom: 0;
+  border-color: #385072;
+  background:
+    radial-gradient(circle at 100% -15%, rgba(94, 200, 255, 0.16), transparent 43%),
+    linear-gradient(164deg, #121926 0%, #0f1521 100%);
 }
 
 .pitch-metrics-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 9px;
 }
 
 .pitch-metrics-grid article {
-  border: 1px solid #2f3748;
-  border-radius: 12px;
-  background: #111723;
-  padding: 10px;
+  border: 1px solid #344055;
+  border-radius: 13px;
+  background: rgba(15, 22, 34, 0.92);
+  padding: 11px;
 }
 
 .pitch-metrics-grid span {
   display: block;
-  color: var(--sub);
+  color: #9fb0c8;
   font-size: 12px;
 }
 
 .pitch-metrics-grid b {
   display: block;
-  margin-top: 4px;
-  font-size: 19px;
+  margin-top: 6px;
+  font-size: 20px;
+  line-height: 1.1;
   color: #ecf6ff;
 }
 
-.pitch-ask p {
-  margin-top: 0;
-  color: #d2dbef;
-  line-height: 1.45;
+@media (max-width: 420px) {
+  .pitch-grid,
+  .pitch-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pitch-hero h2 {
+    font-size: 25px;
+  }
+
+  .pitch-item {
+    min-height: 0;
+  }
 }
 
 .wallet-row {
@@ -762,7 +885,7 @@ body {
 
 .input:focus {
   border-color: var(--yellow);
-  box-shadow: 0 0 0 2px rgba(255, 212, 0, 0.2);
+  box-shadow: 0 0 0 2px rgba(94, 200, 255, 0.2);
 }
 
 .list {
